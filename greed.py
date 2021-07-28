@@ -162,7 +162,7 @@ def proverka_random(vernost):
                 break
         revealed[edro - 1] = True
         edro -=1
-        tkinter.messagebox.showinfo(root.pytania[index_voprosa]["A"][edro].rstrip('\n'), "Правильный ли это ответ?")
+        tkinter.messagebox.showinfo(root.pytania[index_voprosa]["A"][edro].strip('\n'), "Правильный ли это ответ?")
         log.write(root.pytania[index_voprosa]["A"][edro]+' - неверный'+'\n')
         root.knopki[edro]["bg"] = "#cf0000"
         global vernich
@@ -191,7 +191,7 @@ def proverka_random(vernost):
                 break
         revealed[edro - 1] = True
         edro -= 1
-        tkinter.messagebox.showinfo(root.pytania[index_voprosa]["A"][edro].rstrip('\n'), "Правильный ли это ответ?")
+        tkinter.messagebox.showinfo(root.pytania[index_voprosa]["A"][edro].strip('\n'), "Правильный ли это ответ?")
         root.knopki[edro]["bg"] = "#ff9f00"
         log.write(root.pytania[index_voprosa]["A"][edro]+' - верный'+'\n')
         variants.remove(edro + 1)
@@ -532,52 +532,51 @@ def right():
                 #IgrokiDummy[decision]["Share"] = 0
                 log.write(IgrokiDummy[decision]["Name"]+" покидает игру с выигрышем "+str(IgrokiDummy[decision]["Sgor"]+IgrokiDummy[decision]["Nesgor"])+'\n')
                 notgoing.append(decision)
-
         if (len(IgrokiDummy) == len(notgoing)):
             tkinter.messagebox.showinfo("Игра окончена", "Все игроки забрали деньги")
             log.write("Игра окончена"+'\n')
         else:
-            pass
-            if (len(notgoing) > 0) and (len(IgrokiDummy)> 0):
-                for s in range(len(nuotraukos)):
-                    nuotraukos[s].place_forget()
-                    eax[s].place_forget()
-                IgrokiDummy[:] = [x for i, x in enumerate(IgrokiDummy) if i not in notgoing]
-                nuotraukos[:] = [x for i, x in enumerate(nuotraukos) if i not in notgoing]
-                eax[:] = [x for i, x in enumerate(eax) if i not in notgoing]
-                for a in range(len(IgrokiDummy)):
-                    nuotraukos[a].place(x=15, y=5 + 55 * a)
-                    eax[a].place(x=79, y=5 + 55 * a)
-                if (0 in notgoing):
-                    ko = Image.open("Objects/target_colored.png")
-                    ko.thumbnail((20, 20), Image.ANTIALIAS)
-                    f = ImageTk.PhotoImage(ko)
-                    nuotraukos[0].configure(image=f)
-                if (len(IgrokiDummy) >= 2) and (0 in notgoing):
-                    log.write(IgrokiDummy[0]["Name"] + ' - новый капитан команды' + '\n')
-                    tkinter.messagebox.showinfo("Новый капитан", IgrokiDummy[0]["Name"] + ' - новый капитан команды')
-                # if (0 in notgoing):
-                #     hello = []
-                #     for b in range(len(IgrokiDummy)):
-                #         if (b == 0):
-                #             ko = Image.open("Objects/target_colored.png")
-                #         else:
-                #             ko = Image.open("Objects/target_back.png")
-                #         ko.thumbnail((20, 20), Image.ANTIALIAS)
-                #         f = ImageTk.PhotoImage(ko)
-                #         hello.append(f)
-                #     nuotraukos = []
-                #     eax = []
-                #     for a in range(len(IgrokiDummy)):
-                #         test = tk.Label(Igroki, compound=tk.BOTTOM, text=IgrokiDummy[a]["Name"], image=hello[a])
-                #         # dadc.append(str(2520 // (a + 1)))
-                #         eax.append(tk.Label(Igroki, text=str(IgrokiDummy[a]["Sgor"] + IgrokiDummy[a]["Nesgor"])))
-                #         nuotraukos.append(test)
-                #         nuotraukos[a].place(x=15, y=5 + 55 * a)
-                #         eax[a].place(x=79, y=5 + 55 * a)
-                #
-                stage +=1
-                read_12345678(stage)
+            for s in range(len(nuotraukos)):
+                nuotraukos[s].place_forget()
+                eax[s].place_forget()
+            IgrokiDummy[:] = [x for i, x in enumerate(IgrokiDummy) if i not in notgoing]
+            nuotraukos[:] = [x for i, x in enumerate(nuotraukos) if i not in notgoing]
+            eax[:] = [x for i, x in enumerate(eax) if i not in notgoing]
+            for a in range(len(IgrokiDummy)):
+                nuotraukos[a].place(x=15, y=5 + 55 * a)
+                eax[a].place(x=79, y=5 + 55 * a)
+            if (0 in notgoing):
+                ko = Image.open("Objects/target_colored.png")
+                ko.thumbnail((20, 20), Image.ANTIALIAS)
+                f = ImageTk.PhotoImage(ko)
+                nuotraukos[0].configure(image=f)
+            if (len(IgrokiDummy) >= 2) and (0 in notgoing):
+                log.write(IgrokiDummy[0]["Name"] + ' - новый капитан команды' + '\n')
+                tkinter.messagebox.showinfo("Новый капитан", IgrokiDummy[0]["Name"] + ' - новый капитан команды')
+            # if (0 in notgoing):
+            #     hello = []
+            #     for b in range(len(IgrokiDummy)):
+            #         if (b == 0):
+            #             ko = Image.open("Objects/target_colored.png")
+            #         else:
+            #             ko = Image.open("Objects/target_back.png")
+            #         ko.thumbnail((20, 20), Image.ANTIALIAS)
+            #         f = ImageTk.PhotoImage(ko)
+            #         hello.append(f)
+            #     nuotraukos = []
+            #     eax = []
+            #     for a in range(len(IgrokiDummy)):
+            #         test = tk.Label(Igroki, compound=tk.BOTTOM, text=IgrokiDummy[a]["Name"], image=hello[a])
+            #         # dadc.append(str(2520 // (a + 1)))
+            #         eax.append(tk.Label(Igroki, text=str(IgrokiDummy[a]["Sgor"] + IgrokiDummy[a]["Nesgor"])))
+            #         nuotraukos.append(test)
+            #         nuotraukos[a].place(x=15, y=5 + 55 * a)
+            #         eax[a].place(x=79, y=5 + 55 * a)
+            #
+            # дальше, похоже, идёт ошибка
+            stage +=1
+            read_12345678(stage)
+
 
 
 
