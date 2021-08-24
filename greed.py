@@ -493,7 +493,7 @@ def check_5678():
                 endgame()
 
 def right():
-    global stage, nuotraukos, eax
+    global stage, nuotraukos, eax, ko, f
     current_winnings(stage+1)
     if (stage<=3):
         root.knopki[root.picked]["bg"] = "#ff9f00"
