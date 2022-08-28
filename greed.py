@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Greed
-# Copyright © 2020 Sergey Chernov aka Gamer
+# Copyright © 2020-2022 Sergey Chernov aka Gamer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,6 +32,8 @@ from operator import itemgetter, attrgetter, methodcaller
 from PIL import Image, ImageTk
 from enum import Enum
 from tkinter import simpledialog
+import pygame
+#from test_canvas import holst
 
 class h(Enum):
     unpicked = 1
@@ -57,11 +59,13 @@ class _567 (Enum):
 
 
 stage567 = _567.joker
-
+pygame.mixer.pre_init(44100, -16, 1, 512)
+pygame.init()
 
 root = tk.Tk()
-root.geometry ("800x550")
+root.geometry ("1000x650") #800x550
 root.title ("Greed")
+root.resizable(width=False, height=False)
 freebie = True
 root.term_state = term.default
 global Terminator_Question
@@ -142,6 +146,14 @@ variants = set ()
 golosoval = []
 ku = 0
 _otvet8 = 0
+qualifying_round_stands = []
+qualifying_showans = []
+label_w_names = []
+result = None
+canvas = tk.Canvas(root, width=600, height=300, bg='#cfcfcf')
+hravci = tk.Canvas(root, width=380, height=280, bg='#cfcfcf')
+mistsya_hravciv =  []
+
 
 def read_term():
     pass
@@ -163,6 +175,8 @@ def proverka_random(vernost):
         revealed[edro - 1] = True
         edro -=1
         tkinter.messagebox.showinfo(root.pytania[index_voprosa]["A"][edro].strip('\n'), "Правильный ли это ответ?")
+        pygame.mixer.music.load("sounds/greed_incorrect.mp3")
+        pygame.mixer.music.play(0)
         log.write(root.pytania[index_voprosa]["A"][edro]+' - неверный'+'\n')
         root.knopki[edro]["bg"] = "#cf0000"
         global vernich
@@ -172,6 +186,8 @@ def proverka_random(vernost):
         elif (vernich == 3):
             tkinter.messagebox.showinfo("Ответ неверный", "Покажите нам верный ответ!")
             log.write('Недостающий верный ответ - ')
+        correct_after_fail = pygame.mixer.Sound("sounds/greed_correct_after_fail.wav")
+        correct_after_fail.play()
         for o in range (len(root.pytania[index_voprosa]["A"])):
             revealed[o] = True
             if (o+1 in root.pytania[index_voprosa]["C"]):
@@ -196,12 +212,14 @@ def proverka_random(vernost):
         log.write(root.pytania[index_voprosa]["A"][edro]+' - верный'+'\n')
         variants.remove(edro + 1)
 
+
 def who_answers(kto):
     global active_567
     active_567 = kto
     golosoval[kto] = False
     for op in range(len(nextanswer2)):
         nextanswer2[op].pack_forget()
+    light_player(active_567)
     tk.messagebox.showinfo(' ', IgrokiDummy[active_567]["Name"] + ', отвечайте')
     choose.grab_release()
     choose.withdraw()
@@ -236,6 +254,8 @@ def accepted_in_terminator(*args):
     elif ((root.kto_nazhal == 1) and (b in pytaniaterm[index_term]["A"])) or ((root.kto_nazhal ==0) and not(b in pytaniaterm[index_term]["A"])):
         winner = player_term[1]
         loser = player_term[0]
+    pygame.mixer.music.load("sounds/greed_cue.mp3")
+    pygame.mixer.music.play(0)
     IgrokiDummy[winner]["Sgor"], IgrokiDummy[loser]["Sgor"] = (IgrokiDummy[winner]["Sgor"]+IgrokiDummy[loser]["Sgor"]), 0
     IgrokiDummy[winner]["Share"], IgrokiDummy[loser]["Share"] = (IgrokiDummy[winner]["Share"] + IgrokiDummy[loser]["Share"]), 0
     global stage
@@ -245,6 +265,13 @@ def accepted_in_terminator(*args):
     if loser == 0:
         log.write(IgrokiDummy[winner]["Name"] + ' - новый капитан команды'+'\n')
         tkinter.messagebox.showinfo("Новый капитан", IgrokiDummy[winner]["Name"] + ' - новый капитан команды')
+        a1, b1 = hravci.coords(label_w_names[0])
+        e1, f1 = hravci.coords(label_w_names[winner])
+        hravci.coords(label_w_names[0], e1, f1)
+        hravci.coords(label_w_names[winner], a1, b1)
+        label_w_names[winner], label_w_names[0] = label_w_names[0], label_w_names[winner]
+        IgrokiDummy[0]["Occupied"], IgrokiDummy[winner]["Occupied"] = IgrokiDummy[winner]["Occupied"], IgrokiDummy[0][
+            "Occupied"]
         IgrokiDummy [winner], IgrokiDummy[0] = IgrokiDummy[0], IgrokiDummy[winner]
         nuotraukos[winner]["text"], nuotraukos[0]["text"] = nuotraukos[0]["text"], nuotraukos[winner]["text"]
         eax[winner]["text"], eax[0]["text"] = eax[0]["text"], eax[winner]["text"]
@@ -253,12 +280,14 @@ def accepted_in_terminator(*args):
         nuotraukos.pop(winner)
         IgrokiDummy.pop(winner)
         eax.pop(winner)
+        hravci.delete(label_w_names[winner])
     else:
         nuotraukos[loser].place_forget()
         eax[loser].place_forget()
         nuotraukos.pop(loser)
         IgrokiDummy.pop(loser)
         eax.pop(loser)
+        hravci.delete(label_w_names[loser])
     current_winnings(stage)
     # for z in range(len(IgrokiDummy)):
     #     print(str(IgrokiDummy[z]["Name"]) + ': ' + str(IgrokiDummy[z]["Sgor"] + IgrokiDummy[z]["Nesgor"]) + '(' + str(
@@ -306,6 +335,7 @@ def accept():
     if (stage < 7):
         if (active_567>0) and ((len(variants))<4):
             active_567 -=1
+            light_player(active_567)
             if (ku!=0):
                 if (len(variants) < 4) and (active_567 > 0):
                     tk.messagebox.showinfo(' ', IgrokiDummy[active_567]["Name"] + ', отвечайте')
@@ -364,6 +394,8 @@ def onKeyPress(event):
         elif (event.char in set('LlдД')):
             root.buzzer2[1]["bg"]="#ff0000"
             root.kto_nazhal = 1
+        button_pressed = pygame.mixer.Sound("sounds/greed_gong.wav")
+        button_pressed.play()
         log.write('Кнопку нажимает '+IgrokiDummy[player_term[root.kto_nazhal]]["Name"]+'\n')
         root.term_state = term.pressed
         vvod.place(relx=0.5, rely = 0.5)
@@ -373,6 +405,9 @@ def onKeyPress(event):
 
 def terminator(auz):
     player_term[1] = auz
+    for a in range(5):
+        if (IgrokiDummy[auz]["Occupied"]==a):
+            hravci.itemconfig(mistsya_hravciv[a], fill="#ffffff")
     for op in range(len(skem_knopka2)):
         skem_knopka2[op].pack_forget()
     for a in range(2):
@@ -383,6 +418,9 @@ def terminator(auz):
         root.buzzer2[a].place(relx = 0.4+0.3*a, rely = 0.3)
         root.buzzer2[a]["bg"]="#cccccc"
         root.buzzer2[a]["text"]= IgrokiDummy[player_term[a]]["Name"]
+    tk.messagebox.showinfo("Готовность номер 1", IgrokiDummy[player_term[0]]["Name"]+', '+IgrokiDummy[player_term[1]]["Name"]+', прошу вас в зону Терминатора!')
+    light_player(-1)
+    hravci.place_forget()
     global Terminator_Question
     Terminator_Question = tk.Label(text =pytaniaterm[index_term]["Q"] )
     #global Terminator_Question
@@ -402,7 +440,10 @@ def term_choose():
     global active_term, index_term
     active_term = randrange (len(IgrokiDummy))
     root.title (IgrokiDummy[active_term]["Name"])
+    svet_term(active_term)
     if (schetchik == 0):
+        pygame.mixer.music.load("sounds/greed_terminator_inter.mp3")
+        pygame.mixer.music.play(-1)
         log.write('Терминатор выбрал '+IgrokiDummy[active_term]["Name"]+'\n')
         if tkinter.messagebox.askyesno(IgrokiDummy[active_term]["Name"], 'будете ли вы играть в терминатор?'):
             player_term[0] = active_term
@@ -423,7 +464,12 @@ def term_choose():
                 skem_knopka2[a].pack(side=tk.LEFT)
             skem.grab_set()
         else:
+            light_player(-1)
+            pygame.mixer.music.load("sounds/greed_cue.mp3")
+            pygame.mixer.music.play(0)
             log.write('Игрок отказывается играть в терминатор'+'\n')
+            tk.messagebox.showinfo("Отказ", "Игрок отказывается играть в Терминатор, и мы продолжаем игру в полном составе")
+            hravci.place_forget()
             global stage
             #stage += 1
             read_12345678(stage)
@@ -443,12 +489,16 @@ def check_5678():
     elif (vernich < 3):
         for p in range(vernich):
             proverka_random(True)
+            correct = pygame.mixer.Sound("sounds/greed_correct.wav")
+            correct.play()
         proverka_random(False)
         current_winnings(0)
         endgame()
     elif (vernich == 3) or (vernich == 4):
         for p in range(3):
             proverka_random(True)
+            correct = pygame.mixer.Sound("sounds/greed_correct.wav")
+            correct.play()
         if (stage < 7):
             if tkinter.messagebox.askyesno("Взятка", "Вы можете поделить " + str(
                     (money[stage + 1]) // 10) + ' и покинуть игру.' + '\n' + IgrokiDummy[0][
@@ -464,6 +514,7 @@ def check_5678():
             else:
                 bailout = False
                 tkinter.messagebox.showinfo("Вы отказались от взятки", "Проверяем четвёртый ответ")  # dopisat'
+            pygame.mixer.music.stop()
             if (vernich == 3):
                 proverka_random(False)
                 if (bailout == True):
@@ -475,9 +526,13 @@ def check_5678():
             elif (vernich == 4):
                 proverka_random(True)
                 if (bailout == False):
+                    pygame.mixer.music.load("sounds/greed_correct_full.mp3")
+                    pygame.mixer.music.play(0)
                     tkinter.messagebox.showinfo("Браво!", "Вы успешно завершили этот раунд")
                     right()
                 else:
+                    correct = pygame.mixer.Sound("sounds/greed_correct.wav")
+                    correct.play()
                     tkinter.messagebox.showinfo("Жаль...", "Вы напрасно остановились!")
                     endgame()
         elif (stage == 7):
@@ -488,6 +543,8 @@ def check_5678():
                 endgame()
             elif (vernich == 4):
                 proverka_random(True)
+                pygame.mixer.music.load("sounds/greed_correct_full.mp3")
+                pygame.mixer.music.play(0)
                 tkinter.messagebox.showinfo("Поздравляем", "Вы успешно прошли игру!")
                 right()
                 endgame()
@@ -497,6 +554,8 @@ def right():
     current_winnings(stage+1)
     if (stage<=3):
         root.knopki[root.picked]["bg"] = "#ff9f00"
+        pygame.mixer.music.load("sounds/greed_correct_full.mp3")
+        pygame.mixer.music.play(0)
         tkinter.messagebox.showinfo("Верно!", "Поздравляю, ответ правильный!" )
         root.picked = None
         log.write('Это правильный ответ ' + "\n")
@@ -509,11 +568,15 @@ def right():
     if (0<=stage <=5):
         if tkinter.messagebox.askyesno("Капитан", IgrokiDummy[0]["Name"]+', '+"будете ли вы играть дальше?"):
             stage +=1
+            light_player(-1)
             if ( 0 <= stage <=3):
                 read_12345678(stage)
             elif stage <7:
+                pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
+                pygame.mixer.music.play(-1)
                 global schetchik
                 schetchik = randint(10, 20)
+                svet_term(-1)
                 tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
                 root.termtimer = root.after(400, term_choose)
                 pass #to be rectified
@@ -525,6 +588,7 @@ def right():
             endgame()
     elif (stage==6):
         notgoing = []
+        x, y = hravci.coords(label_w_names[0])
         for decision in range (len(IgrokiDummy)):
             if tkinter.messagebox.askyesno ("Восьмой вопрос", IgrokiDummy[decision]["Name"]+', пойдёте ли на восьмой вопрос?'):
                 pass
@@ -532,6 +596,7 @@ def right():
                 #IgrokiDummy[decision]["Share"] = 0
                 log.write(IgrokiDummy[decision]["Name"]+" покидает игру с выигрышем "+str(IgrokiDummy[decision]["Sgor"]+IgrokiDummy[decision]["Nesgor"])+'\n')
                 notgoing.append(decision)
+                hravci.delete(label_w_names[IgrokiDummy[decision]["Occupied"]])
         if (len(IgrokiDummy) == len(notgoing)):
             tkinter.messagebox.showinfo("Игра окончена", "Все игроки забрали деньги")
             log.write("Игра окончена"+'\n')
@@ -550,6 +615,10 @@ def right():
                 ko.thumbnail((20, 20), Image.ANTIALIAS)
                 f = ImageTk.PhotoImage(ko)
                 nuotraukos[0].configure(image=f)
+                _a, _b = hravci.coords(label_w_names[IgrokiDummy[0]["Occupied"]])
+                hravci.coords(label_w_names[0], _a, _b)
+                hravci.coords(label_w_names[IgrokiDummy[0]["Occupied"]], x, y) #mozhet i ne nado
+                IgrokiDummy[0]["Occupied"]=0
             if (len(IgrokiDummy) >= 2) and (0 in notgoing):
                 log.write(IgrokiDummy[0]["Name"] + ' - новый капитан команды' + '\n')
                 tkinter.messagebox.showinfo("Новый капитан", IgrokiDummy[0]["Name"] + ' - новый капитан команды')
@@ -589,8 +658,13 @@ def check():
     else:
         root.knopki[root.picked]["bg"] = "#cf0000"
         current_winnings(0)
+        pygame.mixer.music.load("sounds/greed_incorrect.mp3")
+        pygame.mixer.music.play(0)
         tkinter.messagebox.showinfo("Ошибка", "Это неправильный ответ. Какой ответ правильный?")
+        pygame.mixer.music.stop()
         root.knopki[root.pytania[index_voprosa]["C"][0]-1]["bg"] = "#ff9f00"
+        correct_after_fail = pygame.mixer.Sound("sounds/greed_correct_after_fail.wav")
+        correct_after_fail.play()
         log.write('Это неправильный ответ ' + "\n")
         log.write("Правильный ответ - "+root.pytania[index_voprosa]["A"][root.pytania[index_voprosa]["C"][0]-1])
         endgame()
@@ -623,18 +697,23 @@ def callback(j):
             root.knopki[j]["bg"] = "#00ffff"
             root.state = h.picked
             root.picked = j
+            choosing_answer = pygame.mixer.Sound("sounds/greed_choosing_answer.wav")
+            choosing_answer.play()
             log.write(IgrokiDummy[4-stage]["Name"] + "  даёт ответ " + root.pytania[index_voprosa]["A"][root.picked] + "\n" )
             root.title (IgrokiDummy[0]["Name"]+', '+"вы согласны с этим ответом?")
             if tkinter.messagebox.askyesno("Капитан", IgrokiDummy[0]["Name"]+', '+"вы согласны с этим ответом?"):
                 root.check = root.after(50, check)
                 #state = h.proverka
             else:
+                remove_answer=pygame.mixer.Sound("sounds/greed_remove_answer.wav")
+                remove_answer.play()
                 root.picked = None
                 log.write(IgrokiDummy[0]["Name"]+ ' убирает этот ответ'+'\n')
                 for a in range(varnumb[stage]):
                     aceptadas[a] = False
                     root.knopki[a]["bg"] = "#00007f"
                 root.state = h.rejected
+                light_player(0)
                 root.title(IgrokiDummy[0]["Name"] + ', ' + "какой ответ вы считаете правильным?")
                 # root.destroy()
         elif root.state == h.rejected:
@@ -642,6 +721,8 @@ def callback(j):
             root.knopki[j]["bg"] = "#00ffff"
             root.picked = j
             log.write('Капитан ставит ответ ' + root.pytania[index_voprosa]["A"][root.picked] + "\n" )
+            choosing_answer = pygame.mixer.Sound("sounds/greed_choosing_answer.wav")
+            choosing_answer.play()
             root.check = root.after(50, check)
             # to be rectified
 
@@ -658,14 +739,18 @@ def callback(j):
                 aceptadas[j] = True
                 variants.add(j + 1)
                 root.knopki[j]["bg"] = "#00ffff"
+                choosing_answer = pygame.mixer.Sound("sounds/greed_choosing_answer.wav")
+                choosing_answer.play()
                 golosoval[active_567] = True
                 log.write(IgrokiDummy[active_567]["Name"] +' - '+root.pytania[index_voprosa]["A"][j] + "\n" )
                 # print (str(active_567))
                 root._5to1 = root.after(1000, accept)
                 if (len(variants) == 4) and (stage < 7):
                     if tkinter.messagebox.askyesno("Замена", "Будете менять один из ответов?"):
+                        light_player(0)
                         stage567 = _567.zamena1
                     else:
+                        light_player(-1)
                         stage567 = _567.proverka
                         num_of_corr()
                 elif (len(variants) == 4) and (stage == 7):
@@ -673,6 +758,8 @@ def callback(j):
                     num_of_corr()
                     # дописать
         elif (stage567 == _567.zamena1) and (aceptadas[j]):
+            remove_answer = pygame.mixer.Sound("sounds/greed_remove_answer.wav")
+            remove_answer.play()
             log.write(IgrokiDummy[0]["Name"] + ' убирает вариант ' + root.pytania[index_voprosa]["A"][j] + "\n" )
             variants.remove(j + 1)
             aceptadas[j] = False
@@ -681,10 +768,13 @@ def callback(j):
             stage567 = _567.zamena2
         elif (stage567 == _567.zamena2) and (aceptadas[j] == False) and not (
                 (freebied == True) and (root.pytania[index_voprosa]["J"][0] == j + 1)):
+            choosing_answer = pygame.mixer.Sound("sounds/greed_choosing_answer.wav")
+            choosing_answer.play()
             log.write(' и ставит вариант ' + root.pytania[index_voprosa]["A"][j]+'.'+'\n')
             aceptadas[j] = True
             variants.add(j + 1)
             root.knopki[j]["bg"] = "#00ffff"
+            light_player(-1)
             stage567 = _567.proverka
             num_of_corr()
 
@@ -733,6 +823,8 @@ def read_12345678(nomer):
         # Respuestas.correct.append(Respuestas)
         # Respuestas.clear()
     sums.close()
+    pygame.mixer.music.load("sounds/greed_back"+str(nomer+1)+".mp3")
+    pygame.mixer.music.play(-1)
     # Text = open('output.txt', 'w') #'w'
     # for a in range(len(Klausimai)):
     #     Text.write(Klausimai[a]["Q"] + "\n")
@@ -760,27 +852,32 @@ def read_12345678(nomer):
         revealed.append(False)
         golosoval.append (False)
     for a in range (varnumb[nomer]):
-        root.knopki[a].place(relx=0.45, rely=0.02+0.055*a)
+        root.knopki[a].place(x=510, y=10+32*a)
         log.write(str(a + 1) + ". " + root.pytania[index_voprosa]["A"][a] + "\n")
     root.state = h.unpicked
     if (nomer<=3):
         root.title (IgrokiDummy[4-stage]["Name"]+', выберите ответ')
+        light_player(4-nomer)
     elif (nomer<7):
         global freebied
         freebied = False
         global active_567
         active_567 = len(IgrokiDummy)
         global freebie
+        hravci.place(x=610, y=360)
         if (nomer == 4):
             jlabel = tk.Label(image=joker_image)
             jlabel.image = joker_image  # keep a reference!
-            jlabel.place(relx=0.75, rely=0.77)
+            jlabel.place(relx=0.50, rely=0.77)
         if (freebie == True):
+            light_player(0)
             if tkinter.messagebox.askyesno("Джокер", "Будете использовать джокер?"):
                 jlabel.place_forget()
                 freebie = False
                 tkinter.messagebox.showinfo("Джокер", "Уберите один неверный ответ")
                 root.knopki[(root.pytania[index_voprosa]["J"][0])-1]["text"] = ""
+                joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
+                joker_sound.play()
                 freebied = True
                 log.write('Капитан использует джокер. Убирается ответ '+root.pytania[index_voprosa]["A"][root.pytania[index_voprosa]["J"][0]-1] + "\n" )
             else:
@@ -795,7 +892,10 @@ def read_12345678(nomer):
         #global active_567
         if (freebie == True):
             freebie = False
+            light_player(0)
             tkinter.messagebox.showinfo("У вас остался джокер", "Уберите один неверный ответ")
+            joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
+            joker_sound.play()
             root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
             freebied = True
             log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
@@ -810,7 +910,27 @@ def read_12345678(nomer):
         root._5to1 = root.after(10, accept)
 
 
+def light_player(index):
+    if (index == -1): #это потушит всё
+        for a in range(5):
+            hravci.itemconfig(mistsya_hravciv[a], fill="#ff9f00")
+    else:
+        for a in range(5):
+            if (IgrokiDummy[index]["Occupied"] == a):
+                hravci.itemconfig(mistsya_hravciv[a], fill="#ffffff")
+            else:
+                hravci.itemconfig(mistsya_hravciv[a], fill="#ff9f00")
 
+def svet_term(index):
+    if (index == -1): #это потушит всё
+        for a in range(5):
+            hravci.itemconfig(mistsya_hravciv[a], fill="#9f0000")
+    else:
+        for a in range(5):
+            if (IgrokiDummy[index]["Occupied"]==a):
+                hravci.itemconfig(mistsya_hravciv[a], fill="#ffffff")
+            else:
+                hravci.itemconfig(mistsya_hravciv[a], fill="#9f0000")
 
 
 
@@ -865,25 +985,50 @@ def q_q(a):
     else:
         Qual_Field = True
         global active_qual
+        #print('active_qual = '+str(active_qual))
+        #print('stands len = ' + str(len(qualifying_round_stands)))
+        light_qual(active_qual)
         root.title (ImenaIgrokov[active_qual]+", введите ответ")
         root.begin = datetime.now()
 
 
+def light_qual(mmm):
+    global canvas, qualifying_round_stands
+    for we in range(6):
+        if (we == mmm):
+            canvas.itemconfig(qualifying_round_stands[we], fill = "#ffffff")
+        else:
+            canvas.itemconfig(qualifying_round_stands[we], fill="#ff9f00")
+
 def after_otbor():
     root.after_cancel(root.komanda) # root.komanda (?)
-    global counter
+    global counter, result, label_w_names
+    qualans_sound=pygame.mixer.Sound("sounds/greed_qualifying_answer.wav")
     a = ""
     if (counter == 0):
         tkinter.messagebox.showinfo("Капитан", "Кто капитан команды?") #надо
+        xx, yy, xx1, yy1 = canvas.coords(qualifying_round_stands[root.XYZ[0]['Original']])
+        #print(xx, yy, xx1, yy1)
+        result = canvas.create_text(xx+44, yy-22, text=str(root.XYZ[0]['Otvet']), fill="#ffff00", width=80)
+        canvas.tag_raise(result)
         root.title ("Капитан команды - " + root.XYZ[0]["Name"] + ", ответ: "+str(root.XYZ[0]["Otvet"]))
+        qualans_sound.play()
         log.write(root.XYZ[0]["Name"] + " (" +str(root.XYZ[0]["Otvet"]) + ") - капитан" +  "\n")
         root.otbor_corr_field.place_forget()
         t_v_otbor.place_forget()
         #dopisat'
     if (counter < 5):
+        #canvas.delete(label_w_names[root.XYZ[counter]['Original']])
         counter +=1
     if (1 <= counter <= 4):
         tkinter.messagebox.showinfo("Следующий игрок", "Кто игрок №" + str(counter)+" ?") #надо
+        canvas.delete(result)
+        canvas.delete(label_w_names[root.XYZ[counter-1]['Original']])
+        xx, yy, xx1, yy1 = canvas.coords(qualifying_round_stands[root.XYZ[counter]['Original']])
+        #print(xx, yy, xx1, yy1)
+        result = canvas.create_text(xx+44, yy-22, text=str(root.XYZ[counter]['Otvet']), fill="#ffff00", width=80)
+        canvas.tag_raise(result)
+        qualans_sound.play()
         root.title ("Игрок №" + str(counter) + " - " + root.XYZ[counter]["Name"] + ", ответ: "+str(root.XYZ[counter]["Otvet"]))
         if (counter == 1):
             a = "первый"
@@ -897,14 +1042,28 @@ def after_otbor():
         root.komanda = root.after(100, after_otbor)
     else:
         tkinter.messagebox.showinfo("Выбывший", "Кто покидает игру?") #надо
+        canvas.delete(result)
+        canvas.delete(label_w_names[root.XYZ[counter-1]['Original']])
+        qualans_sound.play()
         root.title ("Выбывший игрок" + " - " + root.XYZ[counter]["Name"] + ", ответ: "+str(root.XYZ[counter]["Otvet"]))
+        xx, yy, xx1, yy1 = canvas.coords(qualifying_round_stands[root.XYZ[counter]['Original']])
+        #print(xx, yy, xx1, yy1)
+        result = canvas.create_text(xx+44, yy-22, text=str(root.XYZ[counter]['Otvet']), fill="#ffff00", width=80)
+        canvas.tag_raise(result)
         log.write(root.XYZ[counter]["Name"] + " (" +str(root.XYZ[counter]["Otvet"]) + ") "+ "\n")
         tkinter.messagebox.showinfo("Начинаем!", "Команда готова, мы начинаем игру") # дописать
+        canvas.delete('all')
+        label_w_names = []
+        canvas.place_forget()
+        pygame.mixer.music.stop()
+        #pygame.mixer.music.load("sounds/greed_cue.mp3")
+        #pygame.mixer.music.play(0)
         for i in range (5):
             aux["Name"] = root.XYZ[i]["Name"]
             aux["Share"] = 1
             aux["Sgor"] = 0
             aux["Nesgor"] = 0
+            aux["Occupied"] = i
             X = aux.copy()
             IgrokiDummy.append(X)
         Igroki.place(relx=0.03, rely=0.03)
@@ -925,6 +1084,20 @@ def after_otbor():
             eax[a].place(x=79, y=5 + 55 * a)
             #eax[a]["text"] = str(int(eax[a]["text"]) - 1)
             #global vopros
+        hravci.place(x=610, y=360)
+        for a in range(5):
+            if (a == 0):
+                p = hravci.create_rectangle((210, 200), (290, 260), fill="#ff9f00")
+            else:
+                p = hravci.create_rectangle((15 + 89 * (a - 1), 10), (95 + 89 * (a - 1), 70), fill="#ff9f00")
+            mistsya_hravciv.append(p)
+            #print(hravci.coords(mistsya_hravciv[a]))
+            x, y, x1, y1 = hravci.coords(mistsya_hravciv[a])
+            # p = canvas.create_polygon(())
+            # p = canvas.create_polygon(())
+            pvp = next((i for i, item in enumerate(IgrokiDummy) if item["Occupied"] == a), None)
+            pp = hravci.create_text((x + x1) // 2, (y + y1) // 2, text=IgrokiDummy[pvp]["Name"], fill="#00007f", width=45)
+            label_w_names.append(pp)
         global stage
         global vopros_show
         global stage
@@ -956,8 +1129,13 @@ def otbor_next():
     if active_qual <= 4: #должно быть 4
         active_qual +=1
         name_entry["state"] = "normal"
+        light_qual(active_qual)
         root.title (ImenaIgrokov[active_qual]+", введите ответ")
     else:
+        for spam in range(6):
+            canvas.itemconfig(qualifying_round_stands[spam], fill="#ff9f00")
+        visi_atsake = pygame.mixer.Sound("sounds/greed_qualifying_round_time_end.wav")
+        visi_atsake.play()
         name_entry.place_forget()
         root.title ("Какой же ответ правильный?")
         global otbor_waitforcorr
@@ -978,6 +1156,7 @@ def q_a(*args):
         P ["Otvet"] = int(user_name.get())
         P ["Vremya"] = root.end
         P ["Distance"] = abs(P ["Otvet"] - base_otbor[index_voprosa].Answer)
+        P ["Original"] = active_qual
         DICR = P.copy()
         Players.append(DICR)
         root.begin = datetime.now()
@@ -988,6 +1167,7 @@ def q_a(*args):
 
 
 def kwalif():
+    global canvas, qualifying_round_stands, qualifying_showans, label_w_names
     for a in range(len(vardas_variable)):
         if vardas_variable[a].get()=="":
             tkinter.messagebox.showwarning("Имена", "По меньшей мере у одного из игроков пустое имя. Исправьте")
@@ -1001,13 +1181,31 @@ def kwalif():
         greed.place_forget()
         for x in range (6):
             pole_imya[x].place_forget()
+        read_q0()
+        # canvas = tk.Canvas(root, width=600, height=300, bg='#cfcfcf')
+        # canvas.place(x=400, y=210)
+        # a = canvas.create_oval(40, 80, 70, 110, fill="#00ff7f")
+        # canvas.place_forget()
+        canvas.place(relx=0.05, rely=0.12)
+        # canvas.delete(a)
+        # qualifying_round_stands = []
+        # qualifying_showans = []
+        # label_w_names = []
+        for count in range(6):
+            h = canvas.create_rectangle(17 + 97 * count, 150, 17 + 97 * count + 88, 240, fill="#ff9f00")
+            qualifying_round_stands.append(h)
+            xx, yy, xx1, yy1 = canvas.coords(qualifying_round_stands[count])
+            h1 = canvas.create_rectangle(17 + 97 * count, 115, 17 + 97 * count + 88, 146, fill="#3f3f3f")
+            qualifying_showans.append(h1)
+            h2 = canvas.create_text(xx + 44, yy + 44, text=ImenaIgrokov[count], fill="#000000", width=80)
+            label_w_names.append(h2)
         name_entry.place(relx= OTBOR_X, rely=OTBOR_Y)
         name_entry.bind("<Button-1>", q_q(active_qual))
         name_entry.bind("<Return>", q_a)
-        read_q0()
 
 
-
+pygame.mixer.music.load("sounds/greed_back0.mp3")
+pygame.mixer.music.play(-1)
 
 
 # root = tk.Tk()
@@ -1054,7 +1252,6 @@ root.protocol('WM_DELETE_WINDOW', doSomething)  # root is your root window
 root.bind('<KeyPress>', onKeyPress)
 vvod = tk.Entry(textvariable = termotvet)
 vvod.bind("<Return>", accepted_in_terminator)
-
 
 #T = Timer(1.5, otbor_next)
 
