@@ -266,10 +266,10 @@ def accepted_in_terminator(*args):
         log.write(IgrokiDummy[winner]["Name"] + ' - новый капитан команды'+'\n')
         tkinter.messagebox.showinfo("Новый капитан", IgrokiDummy[winner]["Name"] + ' - новый капитан команды')
         a1, b1 = hravci.coords(label_w_names[0])
-        e1, f1 = hravci.coords(label_w_names[winner])
+        e1, f1 = hravci.coords(label_w_names[IgrokiDummy[winner]["Occupied"]])
         hravci.coords(label_w_names[0], e1, f1)
-        hravci.coords(label_w_names[winner], a1, b1)
-        label_w_names[winner], label_w_names[0] = label_w_names[0], label_w_names[winner]
+        hravci.coords(label_w_names[IgrokiDummy[winner]["Occupied"]], a1, b1)
+        label_w_names[IgrokiDummy[winner]["Occupied"]], label_w_names[0] = label_w_names[0], label_w_names[IgrokiDummy[winner]["Occupied"]]
         IgrokiDummy[0]["Occupied"], IgrokiDummy[winner]["Occupied"] = IgrokiDummy[winner]["Occupied"], IgrokiDummy[0][
             "Occupied"]
         IgrokiDummy [winner], IgrokiDummy[0] = IgrokiDummy[0], IgrokiDummy[winner]
@@ -278,16 +278,16 @@ def accepted_in_terminator(*args):
         nuotraukos[winner].place_forget()
         eax[winner].place_forget()
         nuotraukos.pop(winner)
-        IgrokiDummy.pop(winner)
         eax.pop(winner)
-        hravci.delete(label_w_names[winner])
+        hravci.delete(label_w_names[IgrokiDummy[winner]["Occupied"]])
+        IgrokiDummy.pop(winner)
     else:
         nuotraukos[loser].place_forget()
         eax[loser].place_forget()
         nuotraukos.pop(loser)
-        IgrokiDummy.pop(loser)
         eax.pop(loser)
-        hravci.delete(label_w_names[loser])
+        hravci.delete(label_w_names[IgrokiDummy[loser]["Occupied"]])
+        IgrokiDummy.pop(loser)
     current_winnings(stage)
     # for z in range(len(IgrokiDummy)):
     #     print(str(IgrokiDummy[z]["Name"]) + ': ' + str(IgrokiDummy[z]["Sgor"] + IgrokiDummy[z]["Nesgor"]) + '(' + str(
