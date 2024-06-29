@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Greed
-# Copyright © 2020-2022 Sergey Chernov aka Gamer
+# Copyright © 2020-2024 Sergey Chernov aka Gamer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@ class _567 (Enum):
     joker = 4
 
 
+
 stage567 = _567.joker
 pygame.mixer.pre_init(44100, -16, 1, 512)
 pygame.init()
@@ -70,10 +71,27 @@ freebie = True
 root.term_state = term.default
 global Terminator_Question
 
+howmany_freebies = 1
+kysis_kapitonui_buvo = False
+milestone = None
+g_classic = 'Обычная игра'
+g_bribe = 'С капитанской взяткой'
+g_safe = 'С несгораемой суммой'
+g_morehelp = 'С несколькими джокерами'
 
+mode = tk.StringVar (value=g_classic)
+mode_code = 0
+freebies_used_on_this_question = 0
+options = ttk.LabelFrame(root, width=285, height=370, text="Режимы игры")
+options.place(relx=0.69, rely=0.05)
+kiek_dzokeriu = [2,3,4]
+combobox = ttk.Combobox(options, values=kiek_dzokeriu, width=3)
+combobox['state'] = 'disabled'
+combobox.current(2)
 TermQ = []
-
+milestone_buttonz = []
 qterm = codecs.open('qbaset.txt', 'r', "utf_8_sig")  # stage+1
+isxod = 0
 for line in qterm:
     x = {}
 
@@ -88,6 +106,8 @@ qterm.close()
 joker = Image.open("Objects/cardJoker.png")
 joker.thumbnail((50, 50), Image.ANTIALIAS)
 joker_image = ImageTk.PhotoImage(joker)
+jlabel = tk.Label(image=joker_image)
+jlabel.image = joker_image  # keep a reference!
 pytaniaterm = TermQ.copy()
 index_term = randint(0, len(pytaniaterm)-1)
 
@@ -154,6 +174,25 @@ canvas = tk.Canvas(root, width=600, height=300, bg='#cfcfcf')
 hravci = tk.Canvas(root, width=380, height=280, bg='#cfcfcf')
 mistsya_hravciv =  []
 
+
+def choose_game_mode_button(l):
+    global combobox, mode_code
+    mode_code = l
+    if l==3:
+        #print ("Вариант с несколькими джокерами")
+        combobox["state"] = 'readonly'
+    else:
+        combobox['state'] = 'disabled'
+        if l == 0:
+            pass
+            #print("Обычный вариант")
+        elif l==1:
+            pass
+            #print("Вариант с капитанской взяткой")
+        elif l==2:
+            pass
+            #print("Вариант с несгораемой суммой")
+    #print(mode_code)
 
 def read_term():
     pass
@@ -233,6 +272,27 @@ def noway():
 def noway2():
     tkinter.messagebox.showinfo("Не закрывайте это окно")
 
+def milestone_set(v):
+    global vopros_show
+    global milestone
+    log.write("Несгораемая сумма - "+str(money[v])+'\n')
+    milestone = v
+    set_milestone.grab_release()
+    set_milestone.withdraw()
+    vopros_show = root.after(1000, lambda p=stage: read_12345678(p))
+
+def choosing_the_milestone():
+    global set_milestone
+    set_milestone = tk.Toplevel(root)
+    set_milestone.protocol('WM_DELETE_WINDOW', noway2)
+    set_milestone.title(IgrokiDummy[0]['Name']+", выберите несгорамую сумму")
+    for i in range(len(money) - 2):
+        k = tk.Button(set_milestone, text=str(money[i + 1]), command=lambda q=i + 1: milestone_set(q))
+        milestone_buttonz.append(k)
+    for btn in range(len(milestone_buttonz)):
+        milestone_buttonz[btn].pack(side=tk.BOTTOM)
+    set_milestone.grab_set()
+
 def accepted_in_terminator(*args):
     global termotvet
     otvet = str(termotvet.get())
@@ -260,8 +320,8 @@ def accepted_in_terminator(*args):
     IgrokiDummy[winner]["Share"], IgrokiDummy[loser]["Share"] = (IgrokiDummy[winner]["Share"] + IgrokiDummy[loser]["Share"]), 0
     global stage
     current_winnings(stage)
-    tkinter.messagebox.showinfo(" ", 'Выигрыш '+IgrokiDummy[loser]["Name"]+ ': '+str(IgrokiDummy[loser]["Sgor"]+IgrokiDummy[loser]["Nesgor"]))
-    log.write ('Выигрыш '+IgrokiDummy[loser]["Name"]+ ': '+str(IgrokiDummy[loser]["Sgor"]+IgrokiDummy[loser]["Nesgor"])+'\n')
+    tkinter.messagebox.showinfo(" ", 'Выигрыш '+IgrokiDummy[loser]["Name"]+ ': '+str(IgrokiDummy[loser]["Sgor"]+IgrokiDummy[loser]["Nesgor"]+IgrokiDummy[loser]["Stab_Milestone"]))
+    log.write ('Выигрыш '+IgrokiDummy[loser]["Name"]+ ': '+str(IgrokiDummy[loser]["Sgor"]+IgrokiDummy[loser]["Nesgor"]+IgrokiDummy[loser]["Stab_Milestone"])+'\n')
     if loser == 0:
         log.write(IgrokiDummy[winner]["Name"] + ' - новый капитан команды'+'\n')
         tkinter.messagebox.showinfo("Новый капитан", IgrokiDummy[winner]["Name"] + ' - новый капитан команды')
@@ -362,13 +422,22 @@ def accept():
 
 
 def current_winnings(f):
+    global isxod
     sharez = 0
     for s in range (len(IgrokiDummy)):
         sharez += IgrokiDummy[s]["Share"]
-    for s in range (len(IgrokiDummy)):
-        IgrokiDummy[s]["Sgor"]= money[f]*IgrokiDummy[s]["Share"]//sharez
-        #print(str(s)+': '+str(IgrokiDummy[s]["Sgor"]+IgrokiDummy[s]["Nesgor"]))
-        eax[s]["text"] = str(IgrokiDummy[s]["Sgor"]+IgrokiDummy[s]["Nesgor"])
+    if (f==0) and (mode_code==2):
+        isxod = 0
+        for s in range(len(IgrokiDummy)):
+            IgrokiDummy[s]["Sgor"] = money[f] * IgrokiDummy[s]["Share"] // sharez
+            # print(str(s)+': '+str(IgrokiDummy[s]["Sgor"]+IgrokiDummy[s]["Nesgor"]))
+            eax[s]["text"] = str(IgrokiDummy[s]["Sgor"] + IgrokiDummy[s]["Nesgor"]+IgrokiDummy[s]["Stab_Milestone"])
+    else:
+        isxod = f
+        for s in range (len(IgrokiDummy)):
+            IgrokiDummy[s]["Sgor"]= money[f]*IgrokiDummy[s]["Share"]//sharez
+            #print(str(s)+': '+str(IgrokiDummy[s]["Sgor"]+IgrokiDummy[s]["Nesgor"]))
+            eax[s]["text"] = str(IgrokiDummy[s]["Sgor"]+IgrokiDummy[s]["Nesgor"])
     #for z in range(len(IgrokiDummy)):
         #print(str(IgrokiDummy[z]["Name"]) + ': ' + str(IgrokiDummy[z]["Sgor"] + IgrokiDummy[z]["Nesgor"]) + '(' + str(
             #IgrokiDummy[z]["Share"]) + ')')
@@ -499,7 +568,7 @@ def check_5678():
             proverka_random(True)
             correct = pygame.mixer.Sound("sounds/greed_correct.wav")
             correct.play()
-        if (stage < 7):
+        if (stage < 7) and ((mode_code!=2) or ((mode_code==2) and (milestone>stage))):
             if tkinter.messagebox.askyesno("Взятка", "Вы можете поделить " + str(
                     (money[stage + 1]) // 10) + ' и покинуть игру.' + '\n' + IgrokiDummy[0][
                                                          "Name"] + ', вы принимаете это предложение?'):
@@ -535,8 +604,12 @@ def check_5678():
                     correct.play()
                     tkinter.messagebox.showinfo("Жаль...", "Вы напрасно остановились!")
                     endgame()
-        elif (stage == 7):
-            tkinter.messagebox.showinfo("На 8 вопросе не дают взятку", "Проверяем четвёртый ответ")
+        elif (stage == 7) or ((mode_code==2) and (milestone<=stage)):
+            if (stage==7):
+                tkinter.messagebox.showinfo("На 8 вопросе не дают взятку", "Проверяем четвёртый ответ")
+            else:
+                tkinter.messagebox.showinfo("Вы уже дошли до несгоаремой суммы", "Поэтому взятка вам не полагается")
+            pygame.mixer.music.stop()
             if (vernich == 3):
                 proverka_random(False)
                 current_winnings(0)
@@ -545,12 +618,16 @@ def check_5678():
                 proverka_random(True)
                 pygame.mixer.music.load("sounds/greed_correct_full.mp3")
                 pygame.mixer.music.play(0)
-                tkinter.messagebox.showinfo("Поздравляем", "Вы успешно прошли игру!")
-                right()
-                endgame()
+                if (stage < 7):
+                    tkinter.messagebox.showinfo("Браво!", "Вы успешно завершили этот раунд")
+                    right()
+                else:
+                    tkinter.messagebox.showinfo("Поздравляем", "Вы успешно прошли игру!")
+                    right()
+                    endgame()
 
 def right():
-    global stage, nuotraukos, eax, ko, f
+    global stage, nuotraukos, eax, ko, f, kysis_kapitonui_buvo, schetchik
     current_winnings(stage+1)
     if (stage<=3):
         root.knopki[root.picked]["bg"] = "#ff9f00"
@@ -565,7 +642,27 @@ def right():
         root.knopki[b]["bg"] = "#00007f"
         root.knopki[b].place_forget()
         root.otbor_corr_field.place_forget()
-    if (0<=stage <=5):
+    if (mode_code==2) and (milestone == stage+1):
+        pygame.mixer.music.load("sounds/greed_commercial.mp3")
+        pygame.mixer.music.play(0)
+        tkinter.messagebox.showinfo("Вы достигли несгораемой суммы!", "Поэтому следующий вопрос для вас без риска!")
+        for a in range (len(IgrokiDummy)):
+            IgrokiDummy[a]["Stab_Milestone"] = IgrokiDummy[a]["Sgor"]
+        stage += 1
+        light_player(-1)
+        if (0 <= stage <= 3):
+            read_12345678(stage)
+        elif stage < 7:
+            pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
+            pygame.mixer.music.play(-1)
+            #global schetchik
+            schetchik = randint(10, 20)
+            svet_term(-1)
+            tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
+            root.termtimer = root.after(400, term_choose)
+        else:
+            read_12345678(stage)
+    elif (0<=stage <=5):
         if tkinter.messagebox.askyesno("Капитан", IgrokiDummy[0]["Name"]+', '+"будете ли вы играть дальше?"):
             stage +=1
             light_player(-1)
@@ -574,7 +671,7 @@ def right():
             elif stage <7:
                 pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
                 pygame.mixer.music.play(-1)
-                global schetchik
+                #global schetchik
                 schetchik = randint(10, 20)
                 svet_term(-1)
                 tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
@@ -582,7 +679,24 @@ def right():
                 pass #to be rectified
             else:
                 pass #to be rectified
-
+        elif (mode_code == 1) and (kysis_kapitonui_buvo is False) and (randrange(2) == 1) and (IgrokiDummy[0]["Share"] == 1) and (stage in [3,4,5]): #rang=drange(2) == 1
+            if tk.messagebox.askyesno("Может, пойдёте дальше?", IgrokiDummy[0]['Name']+', я дам вам персональную несгораемую взятку в '+str(money[stage+1] // 5)+', если вы согласитесь продолжать игру'):
+                IgrokiDummy[0]["Nesgor"]+=money[stage+1] // 5
+                eax[0]["text"] = str(IgrokiDummy[0]["Sgor"] + IgrokiDummy[0]["Nesgor"])
+                log.write(IgrokiDummy[0]['Name']+' не хочет играть дальше, но после взятки в '+str(money[stage+1] // 5)+' соглашается продолжить игру.'+'\n')
+                kysis_kapitonui_buvo = True
+                stage += 1
+                light_player(-1)
+                pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
+                pygame.mixer.music.play(-1)
+                #global schetchik
+                schetchik = randint(10, 20)
+                svet_term(-1)
+                tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
+                root.termtimer = root.after(400, term_choose)
+            else:
+                log.write('Капитан останавливает игру.' + "\n")
+                endgame()
         else:
             log.write('Капитан останавливает игру.'+"\n")
             endgame()
@@ -672,8 +786,12 @@ def check():
 
 def endgame():
     log.write ("Выигрыши: "+'\n')
-    for k in range (len(IgrokiDummy)):
-        log.write(IgrokiDummy[k]["Name"]+ ": "+ str (IgrokiDummy[k]["Sgor"]+IgrokiDummy[k]["Nesgor"])+'\n')
+    if (isxod == 0):
+        for k in range (len(IgrokiDummy)):
+            log.write(IgrokiDummy[k]["Name"]+ ": "+ str (IgrokiDummy[k]["Stab_Milestone"]+IgrokiDummy[k]["Nesgor"])+'\n')
+    else:
+        for k in range (len(IgrokiDummy)):
+            log.write(IgrokiDummy[k]["Name"]+ ": "+ str (IgrokiDummy[k]["Sgor"]+IgrokiDummy[k]["Nesgor"])+'\n')
 
 
 def num_of_corr():
@@ -690,7 +808,7 @@ def num_of_corr():
 
 
 def callback(j):
-    global stage
+    global stage, freebies_used_on_this_question
     if ( 0 <= stage <=3 ):
         if (root.state == h.unpicked):
             aceptadas[j]=True
@@ -732,7 +850,7 @@ def callback(j):
         global active_567
         global stage567
         if (stage567 == _567.priem):
-            if (aceptadas[j]) or ((freebied == True) and (root.pytania[index_voprosa]["J"][0] == j + 1)) or (
+            if (aceptadas[j]) or ((mode_code!=3) and (freebied == True) and (root.pytania[index_voprosa]["J"][0] == j + 1)) or ((mode_code ==3) and (freebies_used_on_this_question > 0) and (j+1 in root.pytania[index_voprosa]["J"])) or (
                     (stage < 7) and (golosoval[active_567])):
                 pass
             else:
@@ -760,14 +878,15 @@ def callback(j):
         elif (stage567 == _567.zamena1) and (aceptadas[j]):
             remove_answer = pygame.mixer.Sound("sounds/greed_remove_answer.wav")
             remove_answer.play()
-            log.write(IgrokiDummy[0]["Name"] + ' убирает вариант ' + root.pytania[index_voprosa]["A"][j] + "\n" )
+            log.write(IgrokiDummy[0]["Name"] + ' убирает вариант ' + root.pytania[index_voprosa]["A"][j])
             variants.remove(j + 1)
             aceptadas[j] = False
             root.knopki[j]["bg"] = "#00007f"
             root.title("Поставьте свой ответ")
             stage567 = _567.zamena2
-        elif (stage567 == _567.zamena2) and (aceptadas[j] == False) and not (
-                (freebied == True) and (root.pytania[index_voprosa]["J"][0] == j + 1)):
+        # elif (stage567 == _567.zamena2) and (aceptadas[j] == False) and not (
+        #         (freebied == True) and (root.pytania[index_voprosa]["J"][0] == j + 1)): #vernut'
+        elif (stage567 == _567.zamena2) and (aceptadas[j] == False) and not (root.knopki[j]["text"]==""):
             choosing_answer = pygame.mixer.Sound("sounds/greed_choosing_answer.wav")
             choosing_answer.play()
             log.write(' и ставит вариант ' + root.pytania[index_voprosa]["A"][j]+'.'+'\n')
@@ -783,7 +902,7 @@ def read_12345678(nomer):
     global ku
     global stage567
     global aceptadas, revealed, golosoval, jlabel, variants, variants_backup
-    global active_567
+    global active_567, howmany_freebies, freebies_used_on_this_question
     root.after_cancel(vopros_show)
     Klausimai = []
     root.knopki = []
@@ -866,10 +985,10 @@ def read_12345678(nomer):
         global freebie
         hravci.place(x=610, y=360)
         if (nomer == 4):
-            jlabel = tk.Label(image=joker_image)
-            jlabel.image = joker_image  # keep a reference!
+            #jlabel = tk.Label(image=joker_image)
+            #jlabel.image = joker_image  # keep a reference!
             jlabel.place(relx=0.50, rely=0.77)
-        if (freebie == True):
+        if ((freebie == True) and (mode_code!=3)):
             light_player(0)
             if tkinter.messagebox.askyesno("Джокер", "Будете использовать джокер?"):
                 jlabel.place_forget()
@@ -880,34 +999,142 @@ def read_12345678(nomer):
                 joker_sound.play()
                 freebied = True
                 log.write('Капитан использует джокер. Убирается ответ '+root.pytania[index_voprosa]["A"][root.pytania[index_voprosa]["J"][0]-1] + "\n" )
-            else:
-                pass
+        elif (mode_code==3) and (howmany_freebies>0):
+            light_player(0)
+            freebies_used_on_this_question = 0
+            while True:
+                if (howmany_freebies == 0) or ((len(root.pytania[index_voprosa]["A"])-1-freebies_used_on_this_question) <= len(root.pytania[index_voprosa]["C"])):
+                    tkinter.messagebox.showwarning("Начинаем отвечать", "Вы не можете больше использовать джокеры на этом вопросе")
+                    break
+                else:
+                    if tkinter.messagebox.askyesno("Джокеров осталось: "+str(howmany_freebies), "Будете использовать джокер?"):
+                        howmany_freebies -= 1
+                        tkinter.messagebox.showinfo("Джокер", "Уберите один неверный ответ")
+                        if (freebies_used_on_this_question) == 0:
+                            root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
+                            joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
+                            joker_sound.play()
+                            freebied = True
+                            log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
+                                root.pytania[index_voprosa]["J"][0] - 1] + "\n")
+                            freebies_used_on_this_question += 1
+                            if (howmany_freebies == 0):
+                                jlabel.place_forget()
+                                break
+                        elif (len(root.pytania[index_voprosa]["A"])-1-freebies_used_on_this_question) > len(root.pytania[index_voprosa]["C"]): #нельзя закрыть джокерами все неправильные ответы, хотя бы один должен остаться
+                            while True:
+                                i = randint(1, len(root.pytania[index_voprosa]["A"]))
+                                if (i not in root.pytania[index_voprosa]["C"]) and (i not in root.pytania[index_voprosa]["J"]):
+                                    break
+                            root.pytania[index_voprosa]['J'].append(i)
+                            root.knopki[(root.pytania[index_voprosa]["J"][-1]) - 1]["text"] = ""
+                            joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
+                            joker_sound.play()
+                            freebied = True
+                            log.write('Капитан использует ещё один джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
+                                root.pytania[index_voprosa]["J"][-1] - 1] + "\n")
+                            freebies_used_on_this_question += 1
+                            if (howmany_freebies == 0):
+                                jlabel.place_forget()
+                                break
+                    else:
+                        break
+                #else:
+                #     break
+                #
+                # pass #rectify
         stage567 = _567.priem
         log.write("Ответы игроков: "+'\n')
         # global _5to1 #dopisat'
         ku = 0
         root._5to1 = root.after(10, accept)
     elif (nomer == 7):
-        freebied = False
-        #global active_567
-        if (freebie == True):
-            freebie = False
-            light_player(0)
-            tkinter.messagebox.showinfo("У вас остался джокер", "Уберите один неверный ответ")
-            joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
-            joker_sound.play()
-            root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
-            freebied = True
-            log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
-                root.pytania[index_voprosa]["J"][0] - 1] + "\n")
-            jlabel.place_forget()
+        if (mode_code!=3):
+            freebied = False
+            #global active_567
+            if (freebie == True):
+                freebie = False
+                light_player(0)
+                tkinter.messagebox.showinfo("У вас остался джокер", "Уберите один неверный ответ")
+                joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
+                joker_sound.play()
+                root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
+                freebied = True
+                log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
+                    root.pytania[index_voprosa]["J"][0] - 1] + "\n")
+                jlabel.place_forget()
+            else:
+                pass
+            stage567 = _567.priem
+            log.write("Ответы игроков: "+'\n')
+            # global _5to1 #dopisat'
+            ku = 0
+            root._5to1 = root.after(10, accept)
         else:
-            pass
-        stage567 = _567.priem
-        log.write("Ответы игроков: "+'\n')
-        # global _5to1 #dopisat'
-        ku = 0
-        root._5to1 = root.after(10, accept)
+            if (howmany_freebies>0):
+                freebie = False
+                light_player(0)
+                tkinter.messagebox.showinfo("У вас остались джокеры", "Давайте ими воспользуемся")
+                joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
+                joker_sound.play()
+                root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
+                freebied = True
+                log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
+                    root.pytania[index_voprosa]["J"][0] - 1] + "\n")
+                howmany_freebies -= 1
+                xo = howmany_freebies
+                for counter in range(xo):
+                    while True:
+                        i = randint(1, len(root.pytania[index_voprosa]["A"]))
+                        if (i not in root.pytania[index_voprosa]["C"]) and (i not in root.pytania[index_voprosa]["J"]):
+                            root.pytania[index_voprosa]["J"].append(i)
+                            break
+                    log.write('Капитан использует ещё один джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][root.pytania[index_voprosa]["J"][-1] - 1] + "\n")
+                    root.knopki[(root.pytania[index_voprosa]["J"][-1]) - 1]["text"] = ""
+                    freebies_used_on_this_question += 1
+                    howmany_freebies -=1
+                    if (howmany_freebies == 0):
+                        jlabel.place_forget()
+            stage567 = _567.priem
+            log.write("Ответы игроков: "+'\n')
+            # global _5to1 #dopisat'
+            ku = 0
+            root._5to1 = root.after(10, accept)
+
+
+def last_preparations():
+    for x in range(5):
+        if (x == 0):
+            viens = Image.open("Objects/target_colored.png")
+        else:
+            viens = Image.open("Objects/target_back.png")
+        viens.thumbnail((20, 20), Image.ANTIALIAS)
+        root.tkimage = ImageTk.PhotoImage(viens)
+        images.append(root.tkimage)
+    for a in range(5):
+        root.test = tk.Label(Igroki, compound=tk.BOTTOM, text=IgrokiDummy[a]["Name"], image=images[a])
+        dadc.append(str(2520 // (a + 1)))
+        eax.append(tk.Label(Igroki, text=str(IgrokiDummy[a]["Sgor"] + IgrokiDummy[a]["Nesgor"])))
+        nuotraukos.append(root.test)
+        nuotraukos[a].place(x=15, y=5 + 55 * a)
+        eax[a].place(x=79, y=5 + 55 * a)
+        # eax[a]["text"] = str(int(eax[a]["text"]) - 1)
+        # global vopros
+    hravci.place(x=610, y=360)
+    for a in range(5):
+        if (a == 0):
+            p = hravci.create_rectangle((210, 200), (290, 260), fill="#ff9f00")
+        else:
+            p = hravci.create_rectangle((15 + 89 * (a - 1), 10), (95 + 89 * (a - 1), 70), fill="#ff9f00")
+        mistsya_hravciv.append(p)
+        # print(hravci.coords(mistsya_hravciv[a]))
+        x, y, x1, y1 = hravci.coords(mistsya_hravciv[a])
+        # p = canvas.create_polygon(())
+        # p = canvas.create_polygon(())
+        pvp = next((i for i, item in enumerate(IgrokiDummy) if item["Occupied"] == a), None)
+        pp = hravci.create_text((x + x1) // 2, (y + y1) // 2, text=IgrokiDummy[pvp]["Name"], fill="#00007f", width=45)
+        label_w_names.append(pp)
+
 
 
 def light_player(index):
@@ -1063,45 +1290,19 @@ def after_otbor():
             aux["Share"] = 1
             aux["Sgor"] = 0
             aux["Nesgor"] = 0
+            aux["Stab_Milestone"] = 0
             aux["Occupied"] = i
             X = aux.copy()
             IgrokiDummy.append(X)
         Igroki.place(relx=0.03, rely=0.03)
-        for x in range(5):
-            if (x == 0):
-                viens = Image.open("Objects/target_colored.png")
-            else:
-                viens = Image.open("Objects/target_back.png")
-            viens.thumbnail((20, 20), Image.ANTIALIAS)
-            root.tkimage = ImageTk.PhotoImage(viens)
-            images.append(root.tkimage)
-        for a in range (5):
-            root.test = tk.Label(Igroki, compound=tk.BOTTOM, text=IgrokiDummy[a]["Name"], image=images[a])
-            dadc.append(str(2520 // (a + 1)))
-            eax.append(tk.Label(Igroki, text=str(IgrokiDummy[a]["Sgor"]+IgrokiDummy[a]["Nesgor"])))
-            nuotraukos.append(root.test)
-            nuotraukos[a].place(x=15, y=5 + 55 * a)
-            eax[a].place(x=79, y=5 + 55 * a)
-            #eax[a]["text"] = str(int(eax[a]["text"]) - 1)
-            #global vopros
-        hravci.place(x=610, y=360)
-        for a in range(5):
-            if (a == 0):
-                p = hravci.create_rectangle((210, 200), (290, 260), fill="#ff9f00")
-            else:
-                p = hravci.create_rectangle((15 + 89 * (a - 1), 10), (95 + 89 * (a - 1), 70), fill="#ff9f00")
-            mistsya_hravciv.append(p)
-            #print(hravci.coords(mistsya_hravciv[a]))
-            x, y, x1, y1 = hravci.coords(mistsya_hravciv[a])
-            # p = canvas.create_polygon(())
-            # p = canvas.create_polygon(())
-            pvp = next((i for i, item in enumerate(IgrokiDummy) if item["Occupied"] == a), None)
-            pp = hravci.create_text((x + x1) // 2, (y + y1) // 2, text=IgrokiDummy[pvp]["Name"], fill="#00007f", width=45)
-            label_w_names.append(pp)
-        global stage
-        global vopros_show
-        global stage
-        vopros_show = root.after(1000, lambda p = stage: read_12345678(p))
+        last_preparations()
+        if (mode_code == 2):
+            choosing_the_milestone()
+        else:
+            global stage
+            global vopros_show
+            global stage
+            vopros_show = root.after(1000, lambda p = stage: read_12345678(p))
 
 
 def showcorr():
@@ -1167,12 +1368,17 @@ def q_a(*args):
 
 
 def kwalif():
-    global canvas, qualifying_round_stands, qualifying_showans, label_w_names
+    global canvas, qualifying_round_stands, qualifying_showans, label_w_names, howmany_freebies
     for a in range(len(vardas_variable)):
         if vardas_variable[a].get()=="":
             tkinter.messagebox.showwarning("Имена", "По меньшей мере у одного из игроков пустое имя. Исправьте")
             break
     else:
+        if (mode_code == 3):
+            howmany_freebies = kiek_dzokeriu[combobox.current()]
+            log.write("Джокеров: "+str(howmany_freebies)+'\n')
+        options.place_forget()
+        #print(howmany_freebies)
         for b in range(6):
             ImenaIgrokov.append(vardas_variable[b].get())
         tkinter.messagebox.showinfo("Отбор", "Внимание, вопрос отборочного тура!")
@@ -1239,6 +1445,9 @@ for x in range(6):
 for x in range (6):
     pole_imya[x].place(width = 125, relx=0.05, rely = 0.05+(0.15*x))
 
+
+
+
 #play_accept_otbor = threading.Thread(target = otbor_accept, name = "otbor_accept")
 #back01 = threading.Thread (target = back, name="back")
 t_v_otbor = tk.Label(root, justify=tkinter.LEFT, bg="#8492ee", textvariable=vopros_otbora, wraplength = 330) #padx = 0.12, pady=0.01
@@ -1252,6 +1461,16 @@ root.protocol('WM_DELETE_WINDOW', doSomething)  # root is your root window
 root.bind('<KeyPress>', onKeyPress)
 vvod = tk.Entry(textvariable = termotvet)
 vvod.bind("<Return>", accepted_in_terminator)
+rb_classic = ttk.Radiobutton(options, text=g_classic, value=g_classic, variable=mode, command= lambda a=0: choose_game_mode_button(a))
+rb_bribe = ttk.Radiobutton(options, text=g_bribe, value=g_bribe, variable=mode, command=lambda a=1:choose_game_mode_button(a))
+rb_safe = ttk.Radiobutton(options, text=g_safe, value=g_safe, variable=mode, command=lambda a=2:choose_game_mode_button(a))
+rb_morehelp = ttk.Radiobutton(options, text=g_morehelp, value=g_morehelp, variable=mode, command=lambda a=3:choose_game_mode_button(a))
+
+rb_classic.place(relx=0.02, rely=0.05)
+rb_bribe.place(relx=0.02, rely=0.32)
+rb_safe.place(relx=0.02, rely=0.59)
+rb_morehelp.place(relx=0.02, rely=0.85)
+combobox.place(relx=0.80, rely=0.85)
 
 #T = Timer(1.5, otbor_next)
 
