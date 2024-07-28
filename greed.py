@@ -1093,8 +1093,7 @@ def read_12345678(nomer):
                     root.knopki[(root.pytania[index_voprosa]["J"][-1]) - 1]["text"] = ""
                     freebies_used_on_this_question += 1
                     howmany_freebies -=1
-                    if (howmany_freebies == 0):
-                        jlabel.place_forget()
+                jlabel.place_forget()
             stage567 = _567.priem
             log.write("Ответы игроков: "+'\n')
             # global _5to1 #dopisat'
