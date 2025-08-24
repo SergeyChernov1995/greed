@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Greed
-# Copyright © 2020-2025 Sergey Chernov aka Gamer
+# Copyright © 2020-2024 Sergey Chernov aka Gamer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # ----------------------------------------------------------------------------
 
-import codecs, math
-import random
-#import tkinter
+import codecs
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox
@@ -35,7 +33,6 @@ from PIL import Image, ImageTk
 from enum import Enum
 from tkinter import simpledialog
 import pygame
-import numpy as np
 #from test_canvas import holst
 
 class h(Enum):
@@ -60,14 +57,12 @@ class _567 (Enum):
     proverka = 3
     joker = 4
 
-class who_is(Enum):
-    human = 0
-    bot = 1
+
 
 stage567 = _567.joker
 pygame.mixer.pre_init(44100, -16, 1, 512)
 pygame.init()
-whoisactive = who_is.human
+
 root = tk.Tk()
 root.geometry ("1000x650") #800x550
 root.title ("Greed")
@@ -83,7 +78,7 @@ g_classic = 'Обычная игра'
 g_bribe = 'С капитанской взяткой'
 g_safe = 'С несгораемой суммой'
 g_morehelp = 'С несколькими джокерами'
-bot_names = []
+
 mode = tk.StringVar (value=g_classic)
 mode_code = 0
 freebies_used_on_this_question = 0
@@ -97,8 +92,6 @@ TermQ = []
 milestone_buttonz = []
 qterm = codecs.open('qbaset.txt', 'r', "utf_8_sig")  # stage+1
 isxod = 0
-term_isbot = [False, False]
-capbot_wanna_walkaway = [1, 5, 10, 20, 50, 70]
 for line in qterm:
     x = {}
 
@@ -111,7 +104,7 @@ for line in qterm:
 
 qterm.close()
 joker = Image.open("Objects/cardJoker.png")
-joker= joker.resize((50, 50), resample=Image.LANCZOS)
+joker.thumbnail((50, 50), Image.ANTIALIAS)
 joker_image = ImageTk.PhotoImage(joker)
 jlabel = tk.Label(image=joker_image)
 jlabel.image = joker_image  # keep a reference!
@@ -124,7 +117,7 @@ active_qual = 0  # type: int
 active_term = 0
 active_567 = 0
 yellow = "#ff9f00"
-qual_res = Record.create_type("qual_res", "Name", "Otvet", "Vremya", "Distance", "isBot", Otvet = 0, Vremya = 0)
+qual_res = Record.create_type("qual_res", "Name", "Otvet", "Vremya", "Distance", Otvet = 0, Vremya = 0)
 #Igroki = Record.create_type("Igroki", "Name", "Share", "Sgor", "Nesgor", Share=1, Sgor=0, Nesgor=0)
 Players = []
 XYZ = []
@@ -149,7 +142,6 @@ varnumb = [4, 4, 5, 5, 6, 7, 8, 9]
 term_pinigai = 25000
 stage = 0  # номер вопроса (0)
 varcorr = [1, 1, 1, 1, 4, 4, 4, 4]
-bots_intellect = [85, 80, 75, 70, 65, 60, 55, 50] #[100]*8
 question_greed = {}
 #Klausimai = []
 pytania = []
@@ -163,7 +155,6 @@ skem_knopka = []
 skem_knopka2 = []
 buzzer = []
 buzzer2 = []
-varz = []
 kto_nazhal = None
 revealed = []
 freebied = None
@@ -182,16 +173,7 @@ result = None
 canvas = tk.Canvas(root, width=600, height=300, bg='#cfcfcf')
 hravci = tk.Canvas(root, width=380, height=280, bg='#cfcfcf')
 mistsya_hravciv =  []
-bot_checks = []
-states = [0]*6 #[0]*6
-rejected_answer = -1
-winner, loser = None, None
-def isbot_changed():
-    global states
-    global bot_names
-    states = [var.get() for var in bot_names]
-    print(states)
-bots_in_term = 0
+
 
 def choose_game_mode_button(l):
     global combobox, mode_code
@@ -285,7 +267,53 @@ def who_answers(kto):
 def noway():
     tkinter.messagebox.showinfo("Окно закрыть пока нельзя")
 
-def aftertermmoney():
+
+
+def noway2():
+    tkinter.messagebox.showinfo("Не закрывайте это окно")
+
+def milestone_set(v):
+    global vopros_show
+    global milestone
+    log.write("Несгораемая сумма - "+str(money[v])+'\n')
+    milestone = v
+    set_milestone.grab_release()
+    set_milestone.withdraw()
+    vopros_show = root.after(1000, lambda p=stage: read_12345678(p))
+
+def choosing_the_milestone():
+    global set_milestone
+    set_milestone = tk.Toplevel(root)
+    set_milestone.protocol('WM_DELETE_WINDOW', noway2)
+    set_milestone.title(IgrokiDummy[0]['Name']+", выберите несгорамую сумму")
+    for i in range(len(money) - 2):
+        k = tk.Button(set_milestone, text=str(money[i + 1]), command=lambda q=i + 1: milestone_set(q))
+        milestone_buttonz.append(k)
+    for btn in range(len(milestone_buttonz)):
+        milestone_buttonz[btn].pack(side=tk.BOTTOM)
+    set_milestone.grab_set()
+
+def accepted_in_terminator(*args):
+    global termotvet
+    otvet = str(termotvet.get())
+    log.write ("Игрок даёт ответ "+otvet+'\n')
+    a = otvet.replace(" ", "")
+    b = a.lower()
+    if (b == pytaniaterm[index_term]["A"][0]):
+        tkinter.messagebox.showinfo("Верно!", "Поздравляю, ответ правильный!" )
+        log.write("Это верный ответ"+'\n')
+    elif (b in pytaniaterm[index_term]["A"]):
+        tkinter.messagebox.showinfo("Верно!", "Правильный ответ - "+pytaniaterm[index_term]["A"][0])
+        log.write("Это верный ответ ("+pytaniaterm[index_term]["A"][0]+')'+'\n')
+    else:
+        tkinter.messagebox.showinfo("Неверно!", "Ошибка! Правильный ответ - "+pytaniaterm[index_term]["A"][0])
+        log.write("Это неверный ответ. Правильный ответ - " + pytaniaterm[index_term]["A"][0]+'\n')
+    if ((root.kto_nazhal == 0) and (b in pytaniaterm[index_term]["A"])) or ((root.kto_nazhal ==1) and not(b in pytaniaterm[index_term]["A"])):
+        winner = player_term[0]
+        loser = player_term[1]
+    elif ((root.kto_nazhal == 1) and (b in pytaniaterm[index_term]["A"])) or ((root.kto_nazhal ==0) and not(b in pytaniaterm[index_term]["A"])):
+        winner = player_term[1]
+        loser = player_term[0]
     pygame.mixer.music.load("sounds/greed_cue.mp3")
     pygame.mixer.music.play(0)
     IgrokiDummy[winner]["Sgor"], IgrokiDummy[loser]["Sgor"] = (IgrokiDummy[winner]["Sgor"]+IgrokiDummy[loser]["Sgor"]), 0
@@ -334,150 +362,27 @@ def aftertermmoney():
     vvod.place_forget()
     root.term_state = term.default
     root.kto_nazhal = None
-    root.term_isbot = [False, False]
     #stage+=1
     read_12345678(stage)
 
-
-def noway2():
-    tkinter.messagebox.showinfo("Не закрывайте это окно")
-
-def milestone_set(v):
-    global vopros_show
-    global milestone
-    log.write("Несгораемая сумма - "+str(money[v])+'\n')
-    milestone = v
-    try:
-        set_milestone.grab_release()
-        set_milestone.withdraw()
-    except Exception:
-        print("Капитан - бот")
-    vopros_show = root.after(1000, lambda p=stage: read_12345678(p))
-
-def choosing_the_milestone():
-    global set_milestone
-    set_milestone = tk.Toplevel(root)
-    set_milestone.protocol('WM_DELETE_WINDOW', noway2)
-    set_milestone.title(IgrokiDummy[0]['Name']+", выберите несгорамую сумму")
-    for i in range(len(money) - 2):
-        k = tk.Button(set_milestone, text=str(money[i + 1]), command=lambda q=i + 1: milestone_set(q))
-        milestone_buttonz.append(k)
-    for btn in range(len(milestone_buttonz)):
-        milestone_buttonz[btn].pack(side=tk.BOTTOM)
-    set_milestone.grab_set()
-
-def accepted_in_terminator(*args):
-    global termotvet, winner, loser
-    otvet = str(termotvet.get())
-    log.write ("Игрок даёт ответ "+otvet+'\n')
-    a = otvet.replace(" ", "")
-    b = a.lower()
-    if (b == pytaniaterm[index_term]["A"][0]):
-        tkinter.messagebox.showinfo("Верно!", "Поздравляю, ответ правильный!" )
-        log.write("Это верный ответ"+'\n')
-    elif (b in pytaniaterm[index_term]["A"]):
-        tkinter.messagebox.showinfo("Верно!", "Правильный ответ - "+pytaniaterm[index_term]["A"][0])
-        log.write("Это верный ответ ("+pytaniaterm[index_term]["A"][0]+')'+'\n')
-    else:
-        tkinter.messagebox.showinfo("Неверно!", "Ошибка! Правильный ответ - "+pytaniaterm[index_term]["A"][0])
-        log.write("Это неверный ответ. Правильный ответ - " + pytaniaterm[index_term]["A"][0]+'\n')
-    if ((root.kto_nazhal == 0) and (b in pytaniaterm[index_term]["A"])) or ((root.kto_nazhal ==1) and not(b in pytaniaterm[index_term]["A"])):
-        winner = player_term[0]
-        loser = player_term[1]
-    elif ((root.kto_nazhal == 1) and (b in pytaniaterm[index_term]["A"])) or ((root.kto_nazhal ==0) and not(b in pytaniaterm[index_term]["A"])):
-        winner = player_term[1]
-        loser = player_term[0]
-    aftertermmoney()
-    # pygame.mixer.music.load("sounds/greed_cue.mp3")
-    # pygame.mixer.music.play(0)
-    # IgrokiDummy[winner]["Sgor"], IgrokiDummy[loser]["Sgor"] = (IgrokiDummy[winner]["Sgor"]+IgrokiDummy[loser]["Sgor"]), 0
-    # IgrokiDummy[winner]["Share"], IgrokiDummy[loser]["Share"] = (IgrokiDummy[winner]["Share"] + IgrokiDummy[loser]["Share"]), 0
-    # global stage
-    # current_winnings(stage)
-    # tkinter.messagebox.showinfo(" ", 'Выигрыш '+IgrokiDummy[loser]["Name"]+ ': '+str(IgrokiDummy[loser]["Sgor"]+IgrokiDummy[loser]["Nesgor"]+IgrokiDummy[loser]["Stab_Milestone"]))
-    # log.write ('Выигрыш '+IgrokiDummy[loser]["Name"]+ ': '+str(IgrokiDummy[loser]["Sgor"]+IgrokiDummy[loser]["Nesgor"]+IgrokiDummy[loser]["Stab_Milestone"])+'\n')
-    # if loser == 0:
-    #     log.write(IgrokiDummy[winner]["Name"] + ' - новый капитан команды'+'\n')
-    #     tkinter.messagebox.showinfo("Новый капитан", IgrokiDummy[winner]["Name"] + ' - новый капитан команды')
-    #     a1, b1 = hravci.coords(label_w_names[0])
-    #     e1, f1 = hravci.coords(label_w_names[IgrokiDummy[winner]["Occupied"]])
-    #     hravci.coords(label_w_names[0], e1, f1)
-    #     hravci.coords(label_w_names[IgrokiDummy[winner]["Occupied"]], a1, b1)
-    #     label_w_names[IgrokiDummy[winner]["Occupied"]], label_w_names[0] = label_w_names[0], label_w_names[IgrokiDummy[winner]["Occupied"]]
-    #     IgrokiDummy[0]["Occupied"], IgrokiDummy[winner]["Occupied"] = IgrokiDummy[winner]["Occupied"], IgrokiDummy[0][
-    #         "Occupied"]
-    #     IgrokiDummy [winner], IgrokiDummy[0] = IgrokiDummy[0], IgrokiDummy[winner]
-    #     nuotraukos[winner]["text"], nuotraukos[0]["text"] = nuotraukos[0]["text"], nuotraukos[winner]["text"]
-    #     eax[winner]["text"], eax[0]["text"] = eax[0]["text"], eax[winner]["text"]
-    #     nuotraukos[winner].place_forget()
-    #     eax[winner].place_forget()
-    #     nuotraukos.pop(winner)
-    #     eax.pop(winner)
-    #     hravci.delete(label_w_names[IgrokiDummy[winner]["Occupied"]])
-    #     IgrokiDummy.pop(winner)
-    # else:
-    #     nuotraukos[loser].place_forget()
-    #     eax[loser].place_forget()
-    #     nuotraukos.pop(loser)
-    #     eax.pop(loser)
-    #     hravci.delete(label_w_names[IgrokiDummy[loser]["Occupied"]])
-    #     IgrokiDummy.pop(loser)
-    # current_winnings(stage)
-    # # for z in range(len(IgrokiDummy)):
-    # #     print(str(IgrokiDummy[z]["Name"]) + ': ' + str(IgrokiDummy[z]["Sgor"] + IgrokiDummy[z]["Nesgor"]) + '(' + str(
-    # #         IgrokiDummy[z]["Share"]) + ')')
-    # Terminator_Question.place_forget()
-    # root.buzzer2[0]["bg"] = "#cccccc"
-    # root.buzzer2[1]["bg"] = "#cccccc"
-    # root.buzzer2[0].place_forget()
-    # root.buzzer2[1].place_forget()
-    # pytaniaterm.pop(index_term)
-    # root.termotvet = ''
-    # vvod.place_forget()
-    # root.term_state = term.default
-    # root.kto_nazhal = None
-    # #stage+=1
-    # read_12345678(stage)
-
 def supplement():
-    global active_567
     root.after_cancel(root.dobav)
     if (golosoval[0] is True) and (len(variants)<4):
-        if (IgrokiDummy[0]['isBot']==0):
-            global choose
-            choose = tk.Toplevel(root)
-            choose.protocol('WM_DELETE_WINDOW', noway2)
-            choose.title ("Выберите, кто даст следующий ответ")
-            root.title("Кто даст следующий ответ?")
-            global nextanswer
-            nextanswer = []
-            for a in range(len(IgrokiDummy)):
-                pl = tk.Button(choose, text=IgrokiDummy[a]["Name"], command=lambda ko=a: who_answers(ko))
-                nextanswer.append(pl)
-            global nextanswer2
-            nextanswer2 = nextanswer.copy()
-            for btn in range(len(nextanswer2)):
-                nextanswer2[btn].pack(side=tk.LEFT)
-            choose.grab_set()
-        else:
-            i = random.randint(0, len(IgrokiDummy)-1)
-            if (i == 0):
-                tk.messagebox.showinfo("Следующий ответ", "Я отвечу сам")
-            else:
-                tk.messagebox.showinfo("Следующий ответ", "Его даст "+ IgrokiDummy[i]["Name"])
-            active_567 = i
-            golosoval[i] = False
-            light_player(active_567)
-            tk.messagebox.showinfo(' ', IgrokiDummy[active_567]["Name"] + ', отвечайте')
-            if (IgrokiDummy[active_567]['isBot'] == 1):
-                for i in range(varnumb[stage]):
-                    root.knopki[i]['state'] = "disabled"
-                root.bot567 = root.after(5000, lambda ssa=stage: bots_answer(ssa))
-            else:
-                for i in range(varnumb[stage]):
-                    root.knopki[i]['state'] = "normal"
-
-
+        global choose
+        choose = tk.Toplevel(root)
+        choose.protocol('WM_DELETE_WINDOW', noway2)
+        choose.title ("Выберите, кто даст следующий ответ")
+        root.title("Кто даст следующий ответ?")
+        global nextanswer
+        nextanswer = []
+        for a in range(len(IgrokiDummy)):
+            pl = tk.Button(choose, text=IgrokiDummy[a]["Name"], command=lambda ko=a: who_answers(ko))
+            nextanswer.append(pl)
+        global nextanswer2
+        nextanswer2 = nextanswer.copy()
+        for btn in range(len(nextanswer2)):
+            nextanswer2[btn].pack(side=tk.LEFT)
+        choose.grab_set()
 
 
 def accept():
@@ -492,20 +397,12 @@ def accept():
             active_567 -=1
             light_player(active_567)
             if (ku!=0):
-                if (IgrokiDummy[active_567]['isBot'] == 1):
+                if (len(variants) < 4) and (active_567 > 0):
                     tk.messagebox.showinfo(' ', IgrokiDummy[active_567]["Name"] + ', отвечайте')
-                    for i in range(varnumb[stage]):
-                        root.knopki[i]['state'] = "disabled"
-                    root.bot567 = root.after(5000, lambda ssa=stage: bots_answer(ssa))
+                elif (active_567 == 0) and (golosoval[0] == False):
+                    tk.messagebox.showinfo(' ', IgrokiDummy[active_567]["Name"] + ', отвечайте')
                 else:
-                    for i in range(varnumb[stage]):
-                        root.knopki[i]['state'] = "normal"
-                    if (len(variants) < 4) and (active_567 > 0):
-                        tk.messagebox.showinfo(' ', IgrokiDummy[active_567]["Name"] + ', отвечайте')
-                    elif (active_567 == 0) and (golosoval[0] == False):
-                        tk.messagebox.showinfo(' ', IgrokiDummy[active_567]["Name"] + ', отвечайте')
-                    else:
-                        pass
+                    pass
                 root.after_cancel(root._5to1)
                 stage567 = _567.priem
         if (golosoval[0] is True) and (len(variants) < 4):
@@ -517,9 +414,6 @@ def accept():
         global _otvet8
         if (_otvet8 == 0):
             tk.messagebox.showinfo(' ', IgrokiDummy[active_567]["Name"] + ', отвечайте')
-            if (IgrokiDummy[active_567]["isBot"]==1):
-                for d in range(varnumb[stage]):
-                    root.knopki[d]['state'] = "disabled"
             _otvet8 = 1
         else:
             pass
@@ -558,32 +452,24 @@ def current_winnings(f):
 
 
 def onKeyPress(event):
-    global bots_in_term
     if not (root.term_state == term.ready):
         pass
     elif not (event.char in set ('AaLlфФдД')):
          pass
-    elif (bots_in_term == 2):
-        pass
     else:
-        if (event.char in set('AaфФ')) and (IgrokiDummy[player_term[0]]['isBot'] == 0):
+        if (event.char in set('AaфФ')):
             root.buzzer2[0]["bg"]="#ff0000"
             root.kto_nazhal = 0
-        elif (event.char in set('LlдД')) and (IgrokiDummy[player_term[1]]['isBot'] == 0):
+        elif (event.char in set('LlдД')):
             root.buzzer2[1]["bg"]="#ff0000"
             root.kto_nazhal = 1
-        try:
-            root.after_cancel(root.termbot)
-        except Exception:
-            print("А ботов-то в Терминаторе и не было!")
         button_pressed = pygame.mixer.Sound("sounds/greed_gong.wav")
         button_pressed.play()
         log.write('Кнопку нажимает '+IgrokiDummy[player_term[root.kto_nazhal]]["Name"]+'\n')
         root.term_state = term.pressed
-        if (IgrokiDummy[player_term[root.kto_nazhal]]['isBot'] == 0):
-            vvod.place(relx=0.5, rely = 0.5)
-            vvod.focus_set()
-            #print('Got key press: ', event.char)
+        vvod.place(relx=0.5, rely = 0.5)
+        vvod.focus_set()
+        #print('Got key press: ', event.char)
 
 
 def terminator(auz):
@@ -591,11 +477,8 @@ def terminator(auz):
     for a in range(5):
         if (IgrokiDummy[auz]["Occupied"]==a):
             hravci.itemconfig(mistsya_hravciv[a], fill="#ffffff")
-    try:
-        for op in range(len(skem_knopka2)):
-            skem_knopka2[op].pack_forget()
-    except Exception:
-        print("Бот выбрал соперника в Терминаторе")
+    for op in range(len(skem_knopka2)):
+        skem_knopka2[op].pack_forget()
     for a in range(2):
         b = tk.Label(text = IgrokiDummy[player_term[a]]["Name"])
         buzzer.append(b)
@@ -604,11 +487,6 @@ def terminator(auz):
         root.buzzer2[a].place(relx = 0.4+0.3*a, rely = 0.3)
         root.buzzer2[a]["bg"]="#cccccc"
         root.buzzer2[a]["text"]= IgrokiDummy[player_term[a]]["Name"]
-        if IgrokiDummy[player_term[a]]["isBot"] == 0:
-            term_isbot[a] = False
-        else:
-            term_isbot[a] = True
-    bots_in_term = sum(1 for x in term_isbot if term_isbot[x] is True)
     tk.messagebox.showinfo("Готовность номер 1", IgrokiDummy[player_term[0]]["Name"]+', '+IgrokiDummy[player_term[1]]["Name"]+', прошу вас в зону Терминатора!')
     light_player(-1)
     hravci.place_forget()
@@ -616,64 +494,17 @@ def terminator(auz):
     Terminator_Question = tk.Label(text =pytaniaterm[index_term]["Q"] )
     #global Terminator_Question
     Terminator_Question.place(relx=0.1, rely=0.85)
-    try:
-        skem.grab_release()
-        skem.withdraw()
-    except Exception:
-        print("Что я и говорил")
+    skem.grab_release()
+    skem.withdraw()
     log.write(IgrokiDummy[player_term[0]]["Name"]+ ' выбирает в соперники ' + IgrokiDummy[player_term[1]]["Name"]+'\n')
     log.write("Вопрос терминатора: "+pytaniaterm[index_term]["Q"]+'\n')
     root.term_state = term.ready
-    df = None
-    if (bots_in_term == 1):
-        for i in range(len(term_isbot)):
-            if term_isbot[i] is True:
-                df = i
-            break
-        root.termbot=root.after(random.randint(3500, 6500), lambda a=df:buzz_bot(a))
-    elif (bots_in_term == 2):
-        quick_reaction = []
-        for i in range(2):
-            while True:
-                cuckoo = random.randint(3500, 6500)
-                if cuckoo not in quick_reaction:
-                    quick_reaction.append(cuckoo)
-                    break
-        root.termbot=root.after(min(quick_reaction), lambda c=quick_reaction.index(min(quick_reaction)): buzz_bot(c))
-
-
-
-def buzz_bot(oem):
-    global winner, loser
-    root.after_cancel(root.termbot)
-    root.buzzer2[oem]["bg"] = "#ff0000"
-    root.kto_nazhal = oem
-    button_pressed = pygame.mixer.Sound("sounds/greed_gong.wav")
-    button_pressed.play()
-    log.write('Кнопку нажимает ' + IgrokiDummy[player_term[root.kto_nazhal]]["Name"] + '\n')
-    root.term_state = term.pressed
-    if randrange(100) < 88:
-        ans = pytaniaterm[index_term]["A"][0]
-        tk.messagebox.showinfo(IgrokiDummy[player_term[root.kto_nazhal]]["Name"], 'Мой ответ: '+ans)
-        log.write("Игрок даёт ответ " + ans + '\n')
-        log.write("Это верный ответ" + '\n')
-        winner = player_term[root.kto_nazhal]
-        loser = player_term[1-root.kto_nazhal]
-        tk.messagebox.showinfo("Верно!", 'Это правильный ответ!')
-    else:
-        tk.messagebox.showinfo(IgrokiDummy[player_term[root.kto_nazhal]]["Name"], 'Ой, забыл')
-        log.write('Игрок не даёт ответа.'+'\n')
-        tk.messagebox.showinfo("Увы...", "Правильный ответ - " + pytaniaterm[index_term]["A"][0])
-        log.write("Правильный ответ - " + pytaniaterm[index_term]["A"][0]+'\n')
-        loser = player_term[root.kto_nazhal]
-        winner = player_term[1-root.kto_nazhal]
-    aftertermmoney()
 
 
 
 def term_choose():
     root.after_cancel(term_choose)
-    global schetchik, stage
+    global schetchik
     schetchik = schetchik-1
     global active_term, index_term
     active_term = randrange (len(IgrokiDummy))
@@ -683,62 +514,35 @@ def term_choose():
         pygame.mixer.music.load("sounds/greed_terminator_inter.mp3")
         pygame.mixer.music.play(-1)
         log.write('Терминатор выбрал '+IgrokiDummy[active_term]["Name"]+'\n')
-        if IgrokiDummy[active_term]['isBot'] == 0:
-            if tkinter.messagebox.askyesno(IgrokiDummy[active_term]["Name"], 'будете ли вы играть в терминатор?'):
-                player_term[0] = active_term
-                IgrokiDummy[active_term]["Nesgor"] += term_pinigai
-                eax[active_term]["text"] = str(IgrokiDummy[active_term]["Sgor"]+IgrokiDummy[active_term]["Nesgor"])
-                index_term = randint(0, len(pytaniaterm)-1)
-                root.title (IgrokiDummy[active_term]["Name"]+ ', с кем вы будете играть?')
-                global skem
-                skem = tk.Toplevel(root)
-                skem.protocol('WM_DELETE_WINDOW', noway)
-                for a in range (len(IgrokiDummy)):
-                    if (a!=player_term[0]):
-                        bar = tk.Button (skem, text = IgrokiDummy[a]["Name"], command = lambda ko = a: terminator(ko))
-                        skem_knopka.append(bar)
-                global skem_knopka2
-                skem_knopka2 = skem_knopka.copy()
-                for a in range (len(skem_knopka2)):
-                    skem_knopka2[a].pack(side=tk.LEFT)
-                skem.grab_set()
-            else:
-                light_player(-1)
-                pygame.mixer.music.load("sounds/greed_cue.mp3")
-                pygame.mixer.music.play(0)
-                log.write('Игрок отказывается играть в терминатор'+'\n')
-                tk.messagebox.showinfo("Отказ", "Игрок отказывается играть в Терминатор, и мы продолжаем игру в полном составе")
-                hravci.place_forget()
-                global stage
-                #stage += 1
-                read_12345678(stage)
-                pass
+        if tkinter.messagebox.askyesno(IgrokiDummy[active_term]["Name"], 'будете ли вы играть в терминатор?'):
+            player_term[0] = active_term
+            IgrokiDummy[active_term]["Nesgor"] += term_pinigai
+            eax[active_term]["text"] = str(IgrokiDummy[active_term]["Sgor"]+IgrokiDummy[active_term]["Nesgor"])
+            index_term = randint(0, len(pytaniaterm)-1)
+            root.title (IgrokiDummy[active_term]["Name"]+ ', с кем вы будете играть?')
+            global skem
+            skem = tk.Toplevel(root)
+            skem.protocol('WM_DELETE_WINDOW', noway)
+            for a in range (len(IgrokiDummy)):
+                if (a!=player_term[0]):
+                    bar = tk.Button (skem, text = IgrokiDummy[a]["Name"], command = lambda ko = a: terminator(ko))
+                    skem_knopka.append(bar)
+            global skem_knopka2
+            skem_knopka2 = skem_knopka.copy()
+            for a in range (len(skem_knopka2)):
+                skem_knopka2[a].pack(side=tk.LEFT)
+            skem.grab_set()
         else:
-            tkinter.messagebox.showinfo(IgrokiDummy[active_term]["Name"], 'будете ли вы играть в терминатор?')
-            if (randrange(3) >= 1): #нужно
-                player_term[0] = active_term
-                while True:
-                    i = random.randint(0, len(IgrokiDummy)-1)
-                    if i!=player_term[0]:
-                        break
-                player_term[1] = i
-                tkinter.messagebox.showinfo('Да, буду', 'Хочу в соперники '+IgrokiDummy[i]["Name"])
-                IgrokiDummy[active_term]["Nesgor"] += term_pinigai
-                eax[active_term]["text"] = str(IgrokiDummy[active_term]["Sgor"]+IgrokiDummy[active_term]["Nesgor"])
-                index_term = randint(0, len(pytaniaterm)-1)
-                terminator(i) #?
-            else:
-                tkinter.messagebox.showinfo('Нет', 'Я не буду играть в Терминатор')
-                light_player(-1)
-                pygame.mixer.music.load("sounds/greed_cue.mp3")
-                pygame.mixer.music.play(0)
-                log.write('Игрок отказывается играть в терминатор'+'\n')
-                tk.messagebox.showinfo("Отказ", "Игрок отказывается играть в Терминатор, и мы продолжаем игру в полном составе")
-                hravci.place_forget()
-                #global stage
-                #stage += 1
-                read_12345678(stage)
-                pass
+            light_player(-1)
+            pygame.mixer.music.load("sounds/greed_cue.mp3")
+            pygame.mixer.music.play(0)
+            log.write('Игрок отказывается играть в терминатор'+'\n')
+            tk.messagebox.showinfo("Отказ", "Игрок отказывается играть в Терминатор, и мы продолжаем игру в полном составе")
+            hravci.place_forget()
+            global stage
+            #stage += 1
+            read_12345678(stage)
+            pass
     else:
         root.termtimer = root.after(400, term_choose)
 
@@ -765,86 +569,46 @@ def check_5678():
             correct = pygame.mixer.Sound("sounds/greed_correct.wav")
             correct.play()
         if (stage < 7) and ((mode_code!=2) or ((mode_code==2) and (milestone>stage))):
-            if IgrokiDummy[0]['isBot'] == 0:
-                if tkinter.messagebox.askyesno("Взятка", "Вы можете поделить " + str(
-                        (money[stage + 1]) // 10) + ' и покинуть игру.' + '\n' + IgrokiDummy[0][
-                                                             "Name"] + ', вы принимаете это предложение?'):
-                    bribe(stage + 1)
-                    # для отладки
-                    #for k in range(len(IgrokiDummy)):
-                        #print(IgrokiDummy[k]["Name"] + ": " + str(IgrokiDummy[k]["Sgor"] + IgrokiDummy[k]["Nesgor"]))
-                        # конец отладочной инфы
-                    bailout = True
-                    log.write(IgrokiDummy[0]["Name"]+ ' соглашается на взятку - '+str(((money[stage + 1]) // 10) )+'\n')
-                    tkinter.messagebox.showinfo("Вы взяли взятку", "Но был ли верным четвёртый ответ?")
-                else:
-                    bailout = False
-                    tkinter.messagebox.showinfo("Вы отказались от взятки", "Проверяем четвёртый ответ")  # dopisat'
-                pygame.mixer.music.stop()
-                if (vernich == 3):
-                    proverka_random(False)
-                    if (bailout == True):
-                        tkinter.messagebox.showinfo("Браво!", "Вы вовремя остановились!")
-                    else:
-                        pass
-                        current_winnings(0)
-                    endgame()
-                elif (vernich == 4):
-                    proverka_random(True)
-                    if (bailout == False):
-                        pygame.mixer.music.load("sounds/greed_correct_full.mp3")
-                        pygame.mixer.music.play(0)
-                        tkinter.messagebox.showinfo("Браво!", "Вы успешно завершили этот раунд")
-                        right()
-                    else:
-                        correct = pygame.mixer.Sound("sounds/greed_correct.wav")
-                        correct.play()
-                        tkinter.messagebox.showinfo("Жаль...", "Вы напрасно остановились!")
-                        endgame()
+            if tkinter.messagebox.askyesno("Взятка", "Вы можете поделить " + str(
+                    (money[stage + 1]) // 10) + ' и покинуть игру.' + '\n' + IgrokiDummy[0][
+                                                         "Name"] + ', вы принимаете это предложение?'):
+                bribe(stage + 1)
+                # для отладки
+                #for k in range(len(IgrokiDummy)):
+                    #print(IgrokiDummy[k]["Name"] + ": " + str(IgrokiDummy[k]["Sgor"] + IgrokiDummy[k]["Nesgor"]))
+                    # конец отладочной инфы
+                bailout = True
+                log.write(IgrokiDummy[0]["Name"]+ ' соглашается на взятку - '+str(((money[stage + 1]) // 10) )+'\n')
+                tkinter.messagebox.showinfo("Вы взяли взятку", "Но был ли верным четвёртый ответ?")
             else:
-                tkinter.messagebox.showinfo("Взятка", "Вы можете поделить " + str(
-                        (money[stage + 1]) // 10) + ' и покинуть игру.' + '\n' + IgrokiDummy[0][
-                                                             "Name"] + ', вы принимаете это предложение?')
-                if (vernich == 3) and (randrange(100)>=(25*(stage-3))):
-                    tkinter.messagebox.showinfo("Да", 'Мы берём взятку')
-                    bribe(stage + 1)
-                    # для отладки
-                    #for k in range(len(IgrokiDummy)):
-                        #print(IgrokiDummy[k]["Name"] + ": " + str(IgrokiDummy[k]["Sgor"] + IgrokiDummy[k]["Nesgor"]))
-                        # конец отладочной инфы
-                    bailout = True
-                    log.write(IgrokiDummy[0]["Name"]+ ' соглашается на взятку - '+str(((money[stage + 1]) // 10) )+'\n')
-                    tkinter.messagebox.showinfo("Вы взяли взятку", "Но был ли верным четвёртый ответ?")
+                bailout = False
+                tkinter.messagebox.showinfo("Вы отказались от взятки", "Проверяем четвёртый ответ")  # dopisat'
+            pygame.mixer.music.stop()
+            if (vernich == 3):
+                proverka_random(False)
+                if (bailout == True):
+                    tkinter.messagebox.showinfo("Браво!", "Вы вовремя остановились!")
                 else:
-                    tkinter.messagebox.showinfo("Нет", 'Мы отказываемся от взятки')
-                    bailout = False
-                    tkinter.messagebox.showinfo("Вы отказались от взятки", "Проверяем четвёртый ответ")  # dopisat'
-                pygame.mixer.music.stop()
-                if (vernich == 3):
-                    proverka_random(False)
-                    if (bailout == True):
-                        tkinter.messagebox.showinfo("Браво!", "Вы вовремя остановились!")
-                    else:
-                        pass
-                        current_winnings(0)
+                    pass
+                    current_winnings(0)
+                endgame()
+            elif (vernich == 4):
+                proverka_random(True)
+                if (bailout == False):
+                    pygame.mixer.music.load("sounds/greed_correct_full.mp3")
+                    pygame.mixer.music.play(0)
+                    tkinter.messagebox.showinfo("Браво!", "Вы успешно завершили этот раунд")
+                    right()
+                else:
+                    correct = pygame.mixer.Sound("sounds/greed_correct.wav")
+                    correct.play()
+                    tkinter.messagebox.showinfo("Жаль...", "Вы напрасно остановились!")
                     endgame()
-                elif (vernich == 4):
-                    proverka_random(True)
-                    if (bailout == False):
-                        pygame.mixer.music.load("sounds/greed_correct_full.mp3")
-                        pygame.mixer.music.play(0)
-                        tkinter.messagebox.showinfo("Браво!", "Вы успешно завершили этот раунд")
-                        right()
-                    else:
-                        correct = pygame.mixer.Sound("sounds/greed_correct.wav")
-                        correct.play()
-                        tkinter.messagebox.showinfo("Жаль...", "Вы напрасно остановились!")
-                        endgame()
         elif (stage == 7) or ((mode_code==2) and (milestone<=stage)):
             if (stage==7):
                 tkinter.messagebox.showinfo("На 8 вопросе не дают взятку", "Проверяем четвёртый ответ")
             else:
-                tkinter.messagebox.showinfo("Вы уже дошли до несгораемой суммы", "Поэтому взятка вам не полагается")
+                tkinter.messagebox.showinfo("Вы уже дошли до несгоаремой суммы", "Поэтому взятка вам не полагается")
             pygame.mixer.music.stop()
             if (vernich == 3):
                 proverka_random(False)
@@ -899,113 +663,54 @@ def right():
         else:
             read_12345678(stage)
     elif (0<=stage <=5):
-        if IgrokiDummy[0]['isBot'] == 0:
-            if tkinter.messagebox.askyesno("Капитан", IgrokiDummy[0]["Name"]+', '+"будете ли вы играть дальше?"):
-                stage +=1
-                light_player(-1)
-                if ( 0 <= stage <=3):
-                    read_12345678(stage)
-                elif stage <7:
-                    pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
-                    pygame.mixer.music.play(-1)
-                    #global schetchik
-                    schetchik = randint(10, 20)
-                    svet_term(-1)
-                    tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
-                    root.termtimer = root.after(400, term_choose)
-                    pass #to be rectified
-                else:
-                    pass #to be rectified
-            elif (mode_code == 1) and (kysis_kapitonui_buvo is False) and (randrange(2) == 1) and (IgrokiDummy[0]["Share"] == 1) and (stage in [3,4,5]): #rang=drange(2) == 1
-                if tk.messagebox.askyesno("Может, пойдёте дальше?", IgrokiDummy[0]['Name']+', я дам вам персональную несгораемую взятку в '+str(money[stage+1] // 5)+', если вы согласитесь продолжать игру'):
-                    IgrokiDummy[0]["Nesgor"]+=money[stage+1] // 5
-                    eax[0]["text"] = str(IgrokiDummy[0]["Sgor"] + IgrokiDummy[0]["Nesgor"])
-                    log.write(IgrokiDummy[0]['Name']+' не хочет играть дальше, но после взятки в '+str(money[stage+1] // 5)+' соглашается продолжить игру.'+'\n')
-                    kysis_kapitonui_buvo = True
-                    stage += 1
-                    light_player(-1)
-                    pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
-                    pygame.mixer.music.play(-1)
-                    #global schetchik
-                    schetchik = randint(10, 20)
-                    svet_term(-1)
-                    tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
-                    root.termtimer = root.after(400, term_choose)
-                else:
-                    log.write('Капитан останавливает игру.' + "\n")
-                    endgame()
+        if tkinter.messagebox.askyesno("Капитан", IgrokiDummy[0]["Name"]+', '+"будете ли вы играть дальше?"):
+            stage +=1
+            light_player(-1)
+            if ( 0 <= stage <=3):
+                read_12345678(stage)
+            elif stage <7:
+                pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
+                pygame.mixer.music.play(-1)
+                #global schetchik
+                schetchik = randint(10, 20)
+                svet_term(-1)
+                tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
+                root.termtimer = root.after(400, term_choose)
+                pass #to be rectified
             else:
-                log.write('Капитан останавливает игру.'+"\n")
+                pass #to be rectified
+        elif (mode_code == 1) and (kysis_kapitonui_buvo is False) and (randrange(2) == 1) and (IgrokiDummy[0]["Share"] == 1) and (stage in [3,4,5]): #rang=drange(2) == 1
+            if tk.messagebox.askyesno("Может, пойдёте дальше?", IgrokiDummy[0]['Name']+', я дам вам персональную несгораемую взятку в '+str(money[stage+1] // 5)+', если вы согласитесь продолжать игру'):
+                IgrokiDummy[0]["Nesgor"]+=money[stage+1] // 5
+                eax[0]["text"] = str(IgrokiDummy[0]["Sgor"] + IgrokiDummy[0]["Nesgor"])
+                log.write(IgrokiDummy[0]['Name']+' не хочет играть дальше, но после взятки в '+str(money[stage+1] // 5)+' соглашается продолжить игру.'+'\n')
+                kysis_kapitonui_buvo = True
+                stage += 1
+                light_player(-1)
+                pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
+                pygame.mixer.music.play(-1)
+                #global schetchik
+                schetchik = randint(10, 20)
+                svet_term(-1)
+                tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
+                root.termtimer = root.after(400, term_choose)
+            else:
+                log.write('Капитан останавливает игру.' + "\n")
                 endgame()
         else:
-            tkinter.messagebox.showinfo("Капитан", IgrokiDummy[0]["Name"] + ', ' + "будете ли вы играть дальше?")
-            if (random.randint(1, 100) > 0):
-            #if (random.randint(1, 100) > capbot_wanna_walkaway[stage]): #нужно
-                tkinter.messagebox.showinfo("Да", "Мы играем дальше")
-                stage +=1
-                light_player(-1)
-                if ( 0 <= stage <=3):
-                    read_12345678(stage)
-                elif stage <7:
-                    pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
-                    pygame.mixer.music.play(-1)
-                    #global schetchik
-                    schetchik = randint(10, 20)
-                    svet_term(-1)
-                    tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
-                    root.termtimer = root.after(400, term_choose)
-                    pass #to be rectified
-                else:
-                    pass #to be rectified
-            else:
-                tk.messagebox.showinfo("Нет", 'Хочу забрать деньги')
-                if (mode_code == 1) and (kysis_kapitonui_buvo is False) and (randrange(2) == 1) and (IgrokiDummy[0]["Share"] == 1) and (stage in [3,4,5]): #rang=drange(2) == 1
-                    tk.messagebox.showwarning("Может, пойдёте дальше?", IgrokiDummy[0]['Name']+', я дам вам персональную несгораемую взятку в '+str(money[stage+1] // 5)+', если вы согласитесь продолжать игру')
-                    if (randrange(2)==1):
-                        IgrokiDummy[0]["Nesgor"]+=money[stage+1] // 5
-                        eax[0]["text"] = str(IgrokiDummy[0]["Sgor"] + IgrokiDummy[0]["Nesgor"])
-                        tk.messagebox.showinfo("Хорошо", 'Уговорили')
-                        log.write(IgrokiDummy[0]['Name']+' не хочет играть дальше, но после взятки в '+str(money[stage+1] // 5)+' соглашается продолжить игру.'+'\n')
-                        kysis_kapitonui_buvo = True
-                        stage += 1
-                        light_player(-1)
-                        pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
-                        pygame.mixer.music.play(-1)
-                        #global schetchik
-                        schetchik = randint(10, 20)
-                        svet_term(-1)
-                        tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
-                        root.termtimer = root.after(400, term_choose)
-                    else:
-                        log.write('Капитан останавливает игру.' + "\n")
-                        endgame()
-                else:
-                    log.write('Капитан останавливает игру.'+"\n")
-                    endgame()
-
-
+            log.write('Капитан останавливает игру.'+"\n")
+            endgame()
     elif (stage==6):
         notgoing = []
         x, y = hravci.coords(label_w_names[0])
         for decision in range (len(IgrokiDummy)):
-            if IgrokiDummy[decision]['isBot']==0:
-                if tkinter.messagebox.askyesno ("Восьмой вопрос", IgrokiDummy[decision]["Name"]+', пойдёте ли на восьмой вопрос?'):
-                    pass
-                else:
-                    #IgrokiDummy[decision]["Share"] = 0
-                    log.write(IgrokiDummy[decision]["Name"]+" покидает игру с выигрышем "+str(IgrokiDummy[decision]["Sgor"]+IgrokiDummy[decision]["Nesgor"])+'\n')
-                    notgoing.append(decision)
-                    hravci.delete(label_w_names[IgrokiDummy[decision]["Occupied"]])
+            if tkinter.messagebox.askyesno ("Восьмой вопрос", IgrokiDummy[decision]["Name"]+', пойдёте ли на восьмой вопрос?'):
+                pass
             else:
-                tkinter.messagebox.showinfo("Восьмой вопрос", IgrokiDummy[decision]["Name"]+', пойдёте ли на восьмой вопрос?')
-                if (randrange(10)>7): #7
-                    tkinter.messagebox.showinfo("Да!","Я рискну!")
-                    pass
-                else:
-                    tkinter.messagebox.showinfo("Нет!", "Я лучше заберу свои "+ str(IgrokiDummy[decision]["Sgor"]+IgrokiDummy[decision]["Nesgor"]))
-                    log.write(IgrokiDummy[decision]["Name"]+" покидает игру с выигрышем "+str(IgrokiDummy[decision]["Sgor"]+IgrokiDummy[decision]["Nesgor"])+'\n')
-                    notgoing.append(decision)
-                    hravci.delete(label_w_names[IgrokiDummy[decision]["Occupied"]])
+                #IgrokiDummy[decision]["Share"] = 0
+                log.write(IgrokiDummy[decision]["Name"]+" покидает игру с выигрышем "+str(IgrokiDummy[decision]["Sgor"]+IgrokiDummy[decision]["Nesgor"])+'\n')
+                notgoing.append(decision)
+                hravci.delete(label_w_names[IgrokiDummy[decision]["Occupied"]])
         if (len(IgrokiDummy) == len(notgoing)):
             tkinter.messagebox.showinfo("Игра окончена", "Все игроки забрали деньги")
             log.write("Игра окончена"+'\n')
@@ -1021,7 +726,7 @@ def right():
                 eax[a].place(x=79, y=5 + 55 * a)
             if (0 in notgoing):
                 ko = Image.open("Objects/target_colored.png")
-                ko = ko.resize ((20, 20), resample=Image.LANCZOS)
+                ko.thumbnail((20, 20), Image.ANTIALIAS)
                 f = ImageTk.PhotoImage(ko)
                 nuotraukos[0].configure(image=f)
                 _a, _b = hravci.coords(label_w_names[IgrokiDummy[0]["Occupied"]])
@@ -1099,18 +804,11 @@ def num_of_corr():
     variants_backup = variants.copy()
     root.prov = root.after (1000, check_5678)
 
-def bot_rejected(i):
-    root.after_cancel(root.bot_rejected_1234)
-    while True:
-        a = random.randint(0, varnumb[stage+1]-1)
-        if a != i:
-            break
-    print(str(stage)+'?')
-    callback(a)
+
 
 
 def callback(j):
-    global stage, freebies_used_on_this_question, rejected_answer
+    global stage, freebies_used_on_this_question
     if ( 0 <= stage <=3 ):
         if (root.state == h.unpicked):
             aceptadas[j]=True
@@ -1121,45 +819,21 @@ def callback(j):
             choosing_answer.play()
             log.write(IgrokiDummy[4-stage]["Name"] + "  даёт ответ " + root.pytania[index_voprosa]["A"][root.picked] + "\n" )
             root.title (IgrokiDummy[0]["Name"]+', '+"вы согласны с этим ответом?")
-            light_player(0)
-            if (IgrokiDummy[0]["isBot"]==0):
-                if tkinter.messagebox.askyesno("Капитан", IgrokiDummy[0]["Name"]+', '+"вы согласны с этим ответом?"):
-                    root.check = root.after(50, check)
-                    #state = h.proverka
-                else:
-                    remove_answer=pygame.mixer.Sound("sounds/greed_remove_answer.wav")
-                    remove_answer.play()
-                    root.picked = None
-                    log.write(IgrokiDummy[0]["Name"]+ ' убирает этот ответ'+'\n')
-                    for a in range(varnumb[stage]):
-                        aceptadas[a] = False
-                        root.knopki[a]["bg"] = "#00007f"
-                        root.knopki[a]['state'] = "normal"
-                    root.state = h.rejected
-                    light_player(0)
-                    root.title(IgrokiDummy[0]["Name"] + ', ' + "какой ответ вы считаете правильным?")
-                    # root.destroy()
+            if tkinter.messagebox.askyesno("Капитан", IgrokiDummy[0]["Name"]+', '+"вы согласны с этим ответом?"):
+                root.check = root.after(50, check)
+                #state = h.proverka
             else:
-                tkinter.messagebox.showinfo("Капитан", IgrokiDummy[0]["Name"]+', '+"вы согласны с этим ответом?")
-                if (j+1 == root.pytania[index_voprosa]["C"][0] and (randint(1, 100) > 5)) or (j+1 != root.pytania[index_voprosa]["C"][0] and (randint(1, 100) > 50)):
-                    tkinter.messagebox.showinfo("Да",
-                                                "я принимаю этот ответ")
-                    root.check = root.after(50, check)
-                else:
-                    tkinter.messagebox.showinfo("Нет",
-                                                "я отклоняю этот ответ")
-                    remove_answer=pygame.mixer.Sound("sounds/greed_remove_answer.wav")
-                    remove_answer.play()
-                    root.picked = None
-                    log.write(IgrokiDummy[0]["Name"]+ ' убирает этот ответ'+'\n')
-                    for a in range(varnumb[stage]):
-                        aceptadas[a] = False
-                        root.knopki[a]["bg"] = "#00007f"
-                    root.state = h.rejected
-                    light_player(0)
-                    root.title(IgrokiDummy[0]["Name"] + ', ' + "какой ответ вы считаете правильным?")
-                    rejected_answer = j
-                    root.bot_rejected_1234 = root.after(randint(6000, 10000), lambda g=rejected_answer: bot_rejected(g))
+                remove_answer=pygame.mixer.Sound("sounds/greed_remove_answer.wav")
+                remove_answer.play()
+                root.picked = None
+                log.write(IgrokiDummy[0]["Name"]+ ' убирает этот ответ'+'\n')
+                for a in range(varnumb[stage]):
+                    aceptadas[a] = False
+                    root.knopki[a]["bg"] = "#00007f"
+                root.state = h.rejected
+                light_player(0)
+                root.title(IgrokiDummy[0]["Name"] + ', ' + "какой ответ вы считаете правильным?")
+                # root.destroy()
         elif root.state == h.rejected:
             aceptadas[j] = True
             root.knopki[j]["bg"] = "#00ffff"
@@ -1186,47 +860,22 @@ def callback(j):
                 choosing_answer = pygame.mixer.Sound("sounds/greed_choosing_answer.wav")
                 choosing_answer.play()
                 golosoval[active_567] = True
-                if(stage<7):
-                    log.write(IgrokiDummy[active_567]["Name"] +' - '+root.pytania[index_voprosa]["A"][j] + "\n" )
-                else:
-                    log.write(root.pytania[index_voprosa]["A"][j] + "\n" )
+                log.write(IgrokiDummy[active_567]["Name"] +' - '+root.pytania[index_voprosa]["A"][j] + "\n" )
                 # print (str(active_567))
                 root._5to1 = root.after(1000, accept)
                 if (len(variants) == 4) and (stage < 7):
-                    if (IgrokiDummy[0]['isBot']==0):
-                        if tkinter.messagebox.askyesno("Замена", "Будете менять один из ответов?"):
-                            light_player(0)
-                            stage567 = _567.zamena1
-                        else:
-                            light_player(-1)
-                            stage567 = _567.proverka
-                            num_of_corr()
+                    if tkinter.messagebox.askyesno("Замена", "Будете менять один из ответов?"):
+                        light_player(0)
+                        stage567 = _567.zamena1
                     else:
-                        tkinter.messagebox.showinfo("Замена", "Будете менять один из ответов?")
-                        right = set(root.pytania[index_voprosa]["C"])
-                        if (len(right & variants) < 4) and (randrange(100)>50):
-                            tkinter.messagebox.showinfo("Да", "Я поменяю один ответ")
-                            light_player(0)
-                            stage567 = _567.zamena1
-                            while True:
-                                rejected_answer = randint(0, varnumb[stage]-1)
-                                if aceptadas[rejected_answer]:
-                                    break
-                            root.reject = root.after(2500, lambda e = rejected_answer: callback(e))
-                        else:
-                            tkinter.messagebox.showinfo("Нет", "Я доволен всеми вариантами")
-                            light_player(-1)
-                            stage567 = _567.proverka
-                            num_of_corr()
+                        light_player(-1)
+                        stage567 = _567.proverka
+                        num_of_corr()
                 elif (len(variants) == 4) and (stage == 7):
                     stage567 = _567.proverka
                     num_of_corr()
                     # дописать
         elif (stage567 == _567.zamena1) and (aceptadas[j]):
-            try:
-                root.after_cancel(root.reject)
-            except Exception:
-                print("Не бот убрал один ответ")
             remove_answer = pygame.mixer.Sound("sounds/greed_remove_answer.wav")
             remove_answer.play()
             log.write(IgrokiDummy[0]["Name"] + ' убирает вариант ' + root.pytania[index_voprosa]["A"][j])
@@ -1235,21 +884,9 @@ def callback(j):
             root.knopki[j]["bg"] = "#00007f"
             root.title("Поставьте свой ответ")
             stage567 = _567.zamena2
-            if (IgrokiDummy[0]["isBot"]==1):
-                while True:
-                    hu = random.randint(0, len(varnumb[stage]))
-                    if (aceptadas[hu] is False) and (hu!=j) and (root.knopki[hu]['text']!=''):
-                        break
-                root.replace_answer = root.after(3000, lambda s=hu: callback(s))
-
-
         # elif (stage567 == _567.zamena2) and (aceptadas[j] == False) and not (
         #         (freebied == True) and (root.pytania[index_voprosa]["J"][0] == j + 1)): #vernut'
         elif (stage567 == _567.zamena2) and (aceptadas[j] == False) and not (root.knopki[j]["text"]==""):
-            try:
-                root.after_cancel(root.replace_answer)
-            except Exception:
-                print("Не бот меняет ответ")
             choosing_answer = pygame.mixer.Sound("sounds/greed_choosing_answer.wav")
             choosing_answer.play()
             log.write(' и ставит вариант ' + root.pytania[index_voprosa]["A"][j]+'.'+'\n')
@@ -1259,152 +896,6 @@ def callback(j):
             light_player(-1)
             stage567 = _567.proverka
             num_of_corr()
-
-def bots_answer(_v):
-    if (_v<=3):
-        try:
-            root.after_cancel(root.captainbot)
-        except Exception:
-            print("Это уже не первые 4 вопроса")
-    elif (_v<7):
-        try:
-            root.after_cancel(root.bot567)
-        except Exception:
-            print("Это 567")
-    if (_v<=3):
-        f = random.randint(1, 100)
-        if (f<bots_intellect[_v]):
-            callback(root.pytania[index_voprosa]["C"][0]-1)
-        else:
-            a = randint(0, varnumb[_v]-1)
-            callback(a)
-        if (IgrokiDummy[0]["isBot"]==0):
-            for f in range(varnumb[_v]):
-                root.knopki[f]['state'] = "normal"
-        else:
-            for f in range(varnumb[_v]):
-                root.knopki[f]['state'] = "disabled"
-    elif (_v<7): #rectify all
-        f = random.randint(1, 100)
-        if (f<bots_intellect[_v]):
-            while True:
-                s = randint(0, varnumb[_v]-1)
-                if (s+1 in root.pytania[index_voprosa]["C"]) and (aceptadas[s] is False):
-                    break
-            callback(s)
-        else:
-            while True:
-                a = randint(0, varnumb[_v]-1)
-                if (root.knopki[a]["text"]!="") and (aceptadas[a] is False):
-                    break
-            callback(a)
-        if (IgrokiDummy[0]["isBot"]==0):
-            for f in range(varnumb[_v]):
-                root.knopki[f]['state'] = "normal"
-        else:
-            for f in range(varnumb[_v]):
-                root.knopki[f]['state'] = "disabled"
-
-
-def _8freebies():
-    global ku
-    global stage567, freebied, freebie
-    global aceptadas, revealed, golosoval, jlabel, variants, variants_backup
-    global active_567, howmany_freebies, freebies_used_on_this_question
-    if (mode_code != 3):
-        freebied = False
-        # global active_567
-        if (freebie == True):
-            freebie = False
-            light_player(0)
-            tkinter.messagebox.showinfo("У вас остался джокер", "Уберите один неверный ответ")
-            joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
-            joker_sound.play()
-            root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
-            freebied = True
-            log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
-                root.pytania[index_voprosa]["J"][0] - 1] + "\n")
-            jlabel.place_forget()
-        else:
-            pass
-        stage567 = _567.priem
-        log.write("Ответы, данные капитаном: " + '\n')
-        # global _5to1 #dopisat'
-        ku = 0
-        root._5to1 = root.after(10, accept)
-    else:
-        if (howmany_freebies > 0):
-            freebie = False
-            light_player(0)
-            tkinter.messagebox.showinfo("У вас остались джокеры", "Давайте ими воспользуемся")
-            joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
-            joker_sound.play()
-            root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
-            freebied = True
-            log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
-                root.pytania[index_voprosa]["J"][0] - 1] + "\n")
-            howmany_freebies -= 1
-            xo = howmany_freebies
-            for counter in range(xo):
-                while True:
-                    i = randint(1, len(root.pytania[index_voprosa]["A"]))
-                    if (i not in root.pytania[index_voprosa]["C"]) and (i not in root.pytania[index_voprosa]["J"]):
-                        root.pytania[index_voprosa]["J"].append(i)
-                        break
-                log.write('Капитан использует ещё один джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
-                    root.pytania[index_voprosa]["J"][-1] - 1] + "\n")
-                root.knopki[(root.pytania[index_voprosa]["J"][-1]) - 1]["text"] = ""
-                freebies_used_on_this_question += 1
-                howmany_freebies -= 1
-                if (howmany_freebies == 0):
-                    jlabel.place_forget()
-        stage567 = _567.priem
-        log.write("Ответы, данные капитаном: " + '\n')
-
-        # global _5to1 #dopisat'
-        ku = 0
-        root._5to1 = root.after(10, accept)
-
-def _8accept(j):
-    global stage567
-    aceptadas[j] = True
-    variants.add(j + 1)
-    log.write(root.pytania[index_voprosa]["A"][j])
-    root.knopki[j]["bg"] = "#00ffff"
-    choosing_answer = pygame.mixer.Sound("sounds/greed_choosing_answer.wav")
-    choosing_answer.play()
-    if len(varz)<4:
-        root.orly = root.after(1500, _8bot)
-    else:
-        stage567 = _567.proverka
-        num_of_corr()
-
-
-def _8bot():
-    global varz
-    try:
-        root.after_cancel(root._8ans)
-    except Exception:
-        print("Два раза не заведёшь таймер")
-    count = len(varz)
-    if (count > 0):
-        root.after_cancel(root.orly)
-    if(count < 4):
-        if  (randrange(100)>= bots_intellect[stage]):
-            while True:
-                qa = random.randint(0, varnumb[stage]-1)
-                if (qa+1 in root.pytania[index_voprosa]["C"]) and (aceptadas[qa] is False):
-                    break
-        else:
-            while True:
-                qa = random.randint(0, varnumb[stage] - 1)
-                if (root.knopki[qa]['text']!='') and (aceptadas[qa] is False):
-                    break
-        varz.append(qa)
-    root.orly = root.after(2000, lambda v = varz[-1]: _8accept(v))
-
-
-
 
 
 def read_12345678(nomer):
@@ -1486,13 +977,6 @@ def read_12345678(nomer):
     if (nomer<=3):
         root.title (IgrokiDummy[4-stage]["Name"]+', выберите ответ')
         light_player(4-nomer)
-        if (IgrokiDummy[4-stage]["isBot"]==1):
-            for a in range(varnumb[nomer]):
-                root.knopki[a]['state'] = "disabled"
-            root.captainbot = root.after(5000, lambda ssa=nomer: bots_answer(ssa))
-        else:
-            for a in range(varnumb[nomer]):
-                root.knopki[a]['state'] = "normal"
     elif (nomer<7):
         global freebied
         freebied = False
@@ -1506,32 +990,15 @@ def read_12345678(nomer):
             jlabel.place(relx=0.50, rely=0.77)
         if ((freebie == True) and (mode_code!=3)):
             light_player(0)
-            if (IgrokiDummy[0]["isBot"] == 0):
-                if tkinter.messagebox.askyesno("Джокер", "Будете использовать джокер?"):
-                    jlabel.place_forget()
-                    freebie = False
-                    tkinter.messagebox.showinfo("Джокер", "Уберите один неверный ответ")
-                    root.knopki[(root.pytania[index_voprosa]["J"][0])-1]["text"] = ""
-                    joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
-                    joker_sound.play()
-                    freebied = True
-                    log.write('Капитан использует джокер. Убирается ответ '+root.pytania[index_voprosa]["A"][root.pytania[index_voprosa]["J"][0]-1] + "\n" )
-            else:
-                tkinter.messagebox.showinfo("Джокер", "Будете использовать джокер?")
-                if (randrange(100) > 20): #(randrange(100) > 20) nujno
-                    tkinter.messagebox.showinfo("Да", "Мы воспользуемся джокером")
-                    jlabel.place_forget()
-                    freebie = False
-                    tkinter.messagebox.showinfo("Джокер", "Уберите один неверный ответ")
-                    root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
-                    joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
-                    joker_sound.play()
-                    freebied = True
-                    log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
-                        root.pytania[index_voprosa]["J"][0] - 1] + "\n")
-                else:
-                    tkinter.messagebox.showinfo("Нет", "Мы не будем использовать джокер")
-
+            if tkinter.messagebox.askyesno("Джокер", "Будете использовать джокер?"):
+                jlabel.place_forget()
+                freebie = False
+                tkinter.messagebox.showinfo("Джокер", "Уберите один неверный ответ")
+                root.knopki[(root.pytania[index_voprosa]["J"][0])-1]["text"] = ""
+                joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
+                joker_sound.play()
+                freebied = True
+                log.write('Капитан использует джокер. Убирается ответ '+root.pytania[index_voprosa]["A"][root.pytania[index_voprosa]["J"][0]-1] + "\n" )
         elif (mode_code==3) and (howmany_freebies>0):
             light_player(0)
             freebies_used_on_this_question = 0
@@ -1540,80 +1007,38 @@ def read_12345678(nomer):
                     tkinter.messagebox.showwarning("Начинаем отвечать", "Вы не можете больше использовать джокеры на этом вопросе")
                     break
                 else:
-                    if (IgrokiDummy[0]["isBot"] == 0):
-                        if tkinter.messagebox.askyesno("Джокеров осталось: "+str(howmany_freebies), "Будете использовать джокер?"):
-                            howmany_freebies -= 1
-                            tkinter.messagebox.showinfo("Джокер", "Уберите один неверный ответ")
-                            if (freebies_used_on_this_question) == 0:
-                                root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
-                                joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
-                                joker_sound.play()
-                                freebied = True
-                                log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
-                                    root.pytania[index_voprosa]["J"][0] - 1] + "\n")
-                                freebies_used_on_this_question += 1
-                                if (howmany_freebies == 0):
-                                    jlabel.place_forget()
+                    if tkinter.messagebox.askyesno("Джокеров осталось: "+str(howmany_freebies), "Будете использовать джокер?"):
+                        howmany_freebies -= 1
+                        tkinter.messagebox.showinfo("Джокер", "Уберите один неверный ответ")
+                        if (freebies_used_on_this_question) == 0:
+                            root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
+                            joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
+                            joker_sound.play()
+                            freebied = True
+                            log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
+                                root.pytania[index_voprosa]["J"][0] - 1] + "\n")
+                            freebies_used_on_this_question += 1
+                            if (howmany_freebies == 0):
+                                jlabel.place_forget()
+                                break
+                        elif (len(root.pytania[index_voprosa]["A"])-1-freebies_used_on_this_question) > len(root.pytania[index_voprosa]["C"]): #нельзя закрыть джокерами все неправильные ответы, хотя бы один должен остаться
+                            while True:
+                                i = randint(1, len(root.pytania[index_voprosa]["A"]))
+                                if (i not in root.pytania[index_voprosa]["C"]) and (i not in root.pytania[index_voprosa]["J"]):
                                     break
-                            elif (len(root.pytania[index_voprosa]["A"])-1-freebies_used_on_this_question) > len(root.pytania[index_voprosa]["C"]): #нельзя закрыть джокерами все неправильные ответы, хотя бы один должен остаться
-                                while True:
-                                    i = randint(1, len(root.pytania[index_voprosa]["A"]))
-                                    if (i not in root.pytania[index_voprosa]["C"]) and (i not in root.pytania[index_voprosa]["J"]):
-                                        break
-                                root.pytania[index_voprosa]['J'].append(i)
-                                root.knopki[(root.pytania[index_voprosa]["J"][-1]) - 1]["text"] = ""
-                                joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
-                                joker_sound.play()
-                                freebied = True
-                                log.write('Капитан использует ещё один джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
-                                    root.pytania[index_voprosa]["J"][-1] - 1] + "\n")
-                                freebies_used_on_this_question += 1
-                                if (howmany_freebies == 0):
-                                    jlabel.place_forget()
-                                    break
-                        else:
-                            break
+                            root.pytania[index_voprosa]['J'].append(i)
+                            root.knopki[(root.pytania[index_voprosa]["J"][-1]) - 1]["text"] = ""
+                            joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
+                            joker_sound.play()
+                            freebied = True
+                            log.write('Капитан использует ещё один джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
+                                root.pytania[index_voprosa]["J"][-1] - 1] + "\n")
+                            freebies_used_on_this_question += 1
+                            if (howmany_freebies == 0):
+                                jlabel.place_forget()
+                                break
                     else:
-                        tkinter.messagebox.showinfo("Джокеров осталось: " + str(howmany_freebies),
-                                                       "Будете использовать джокер?")
-                        if (randrange(100)>=80):
-                            tkinter.messagebox.showinfo("Да", "Мы воспользуемся джокером")
-                            howmany_freebies -= 1
-                            tkinter.messagebox.showinfo("Джокер", "Уберите один неверный ответ")
-                            if (freebies_used_on_this_question) == 0:
-                                root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
-                                joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
-                                joker_sound.play()
-                                freebied = True
-                                log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
-                                    root.pytania[index_voprosa]["J"][0] - 1] + "\n")
-                                freebies_used_on_this_question += 1
-                                if (howmany_freebies == 0):
-                                    jlabel.place_forget()
-                                    break
-                            elif (len(root.pytania[index_voprosa]["A"]) - 1 - freebies_used_on_this_question) > len(
-                                    root.pytania[index_voprosa][
-                                        "C"]):  # нельзя закрыть джокерами все неправильные ответы, хотя бы один должен остаться
-                                while True:
-                                    i = randint(1, len(root.pytania[index_voprosa]["A"]))
-                                    if (i not in root.pytania[index_voprosa]["C"]) and (
-                                            i not in root.pytania[index_voprosa]["J"]):
-                                        break
-                                root.pytania[index_voprosa]['J'].append(i)
-                                root.knopki[(root.pytania[index_voprosa]["J"][-1]) - 1]["text"] = ""
-                                joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
-                                joker_sound.play()
-                                freebied = True
-                                log.write('Капитан использует ещё один джокер. Убирается ответ ' +
-                                          root.pytania[index_voprosa]["A"][
-                                              root.pytania[index_voprosa]["J"][-1] - 1] + "\n")
-                                freebies_used_on_this_question += 1
-                                if (howmany_freebies == 0):
-                                    jlabel.place_forget()
-                                    break
-                        else:
-                            tkinter.messagebox.showinfo("Нет", "Мы прибережём джокеры для следующих вопросов")
-                            break
+                        break
                 #else:
                 #     break
                 #
@@ -1624,21 +1049,56 @@ def read_12345678(nomer):
         ku = 0
         root._5to1 = root.after(10, accept)
     elif (nomer == 7):
-        if IgrokiDummy[0]['isBot'] == 0:
-            _8freebies()
+        if (mode_code!=3):
+            freebied = False
+            #global active_567
+            if (freebie == True):
+                freebie = False
+                light_player(0)
+                tkinter.messagebox.showinfo("У вас остался джокер", "Уберите один неверный ответ")
+                joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
+                joker_sound.play()
+                root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
+                freebied = True
+                log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
+                    root.pytania[index_voprosa]["J"][0] - 1] + "\n")
+                jlabel.place_forget()
+            else:
+                pass
+            stage567 = _567.priem
+            log.write("Ответы игроков: "+'\n')
+            # global _5to1 #dopisat'
+            ku = 0
+            root._5to1 = root.after(10, accept)
         else:
-            _8freebies()
-            root._8ans = root.after(1100, _8bot)
-            # # global _5to1 #dopisat'
-            # ku = 0
-            # root._5to1 = root.after(10, accept)
-            #
-
-
-
-
-
-
+            if (howmany_freebies>0):
+                freebie = False
+                light_player(0)
+                tkinter.messagebox.showinfo("У вас остались джокеры", "Давайте ими воспользуемся")
+                joker_sound = pygame.mixer.Sound("sounds/greed_joker.wav")
+                joker_sound.play()
+                root.knopki[(root.pytania[index_voprosa]["J"][0]) - 1]["text"] = ""
+                freebied = True
+                log.write('Капитан использует джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][
+                    root.pytania[index_voprosa]["J"][0] - 1] + "\n")
+                howmany_freebies -= 1
+                xo = howmany_freebies
+                for counter in range(xo):
+                    while True:
+                        i = randint(1, len(root.pytania[index_voprosa]["A"]))
+                        if (i not in root.pytania[index_voprosa]["C"]) and (i not in root.pytania[index_voprosa]["J"]):
+                            root.pytania[index_voprosa]["J"].append(i)
+                            break
+                    log.write('Капитан использует ещё один джокер. Убирается ответ ' + root.pytania[index_voprosa]["A"][root.pytania[index_voprosa]["J"][-1] - 1] + "\n")
+                    root.knopki[(root.pytania[index_voprosa]["J"][-1]) - 1]["text"] = ""
+                    freebies_used_on_this_question += 1
+                    howmany_freebies -=1
+                jlabel.place_forget()
+            stage567 = _567.priem
+            log.write("Ответы игроков: "+'\n')
+            # global _5to1 #dopisat'
+            ku = 0
+            root._5to1 = root.after(10, accept)
 
 
 def last_preparations():
@@ -1647,7 +1107,7 @@ def last_preparations():
             viens = Image.open("Objects/target_colored.png")
         else:
             viens = Image.open("Objects/target_back.png")
-        viens = viens.resize((20, 20),resample=Image.LANCZOS)
+        viens.thumbnail((20, 20), Image.ANTIALIAS)
         root.tkimage = ImageTk.PhotoImage(viens)
         images.append(root.tkimage)
     for a in range(5):
@@ -1707,7 +1167,6 @@ def svet_term(index):
 
 
 def read_q0():
-    global whoisactive
     base_0 = codecs.open ('otbor.txt', 'r', "utf_8_sig")
     for line in base_0:
         HUHA = line.rstrip("\n")
@@ -1721,12 +1180,6 @@ def read_q0():
     log.write(base_otbor[index_voprosa].Question + '\n')
     root.otbor_corr_field = tk.Label(root, justify=tkinter.LEFT, bg=yellow, textvariable=qual_corr, wraplength = 330)
     root.otbor_corr_field.place(relx=0.1, rely=0.77, width=69, height=16) # to be rectified
-    if (states[0] == 1):
-        on_off_otbor(0)
-    else:
-        whoisactive = who_is.human
-
-
     # следующая часть нужна только для отладки
     # for a in range (len(base_otbor)):
     #     print(base_otbor[a].Question)
@@ -1752,17 +1205,16 @@ def apribojimas (*args):
         user_name.set(length[:4])
 
 def q_q(a):
-    global Qual_Field, active_qual
-    light_qual(active_qual)
-    root.title(ImenaIgrokov[active_qual] + ", введите ответ")
+    global Qual_Field
     if Qual_Field:
-        pass
-    elif (states[active_qual] == 1):
         pass
     else:
         Qual_Field = True
+        global active_qual
         #print('active_qual = '+str(active_qual))
         #print('stands len = ' + str(len(qualifying_round_stands)))
+        light_qual(active_qual)
+        root.title (ImenaIgrokov[active_qual]+", введите ответ")
         root.begin = datetime.now()
 
 
@@ -1786,12 +1238,8 @@ def after_otbor():
         result = canvas.create_text(xx+44, yy-22, text=str(root.XYZ[0]['Otvet']), fill="#ffff00", width=80)
         canvas.tag_raise(result)
         root.title ("Капитан команды - " + root.XYZ[0]["Name"] + ", ответ: "+str(root.XYZ[0]["Otvet"]))
-        if root.XYZ[0]['isBot']==1:
-            h = '(бот)'
-        else:
-            h = ''
         qualans_sound.play()
-        log.write(root.XYZ[0]["Name"] + " (" +str(root.XYZ[0]["Otvet"]) + ") - капитан" + h +  "\n")
+        log.write(root.XYZ[0]["Name"] + " (" +str(root.XYZ[0]["Otvet"]) + ") - капитан" +  "\n")
         root.otbor_corr_field.place_forget()
         t_v_otbor.place_forget()
         #dopisat'
@@ -1816,27 +1264,19 @@ def after_otbor():
             a = "третий"
         elif(counter == 4):
             a = "четвёртый"
-        if root.XYZ[counter]['isBot'] == 1:
-            h = '(бот)'
-        else:
-            h = ''
-        log.write(root.XYZ[counter]["Name"] + " (" +str(root.XYZ[counter]["Otvet"]) + ") - " + a + " игрок "+h+" \n")
+        log.write(root.XYZ[counter]["Name"] + " (" +str(root.XYZ[counter]["Otvet"]) + ") - " + a + " игрок"+" \n")
         root.komanda = root.after(100, after_otbor)
     else:
         tkinter.messagebox.showinfo("Выбывший", "Кто покидает игру?") #надо
         canvas.delete(result)
         canvas.delete(label_w_names[root.XYZ[counter-1]['Original']])
         qualans_sound.play()
-        if root.XYZ[counter]['isBot'] == 1:
-            h = '(бот)'
-        else:
-            h = ''
         root.title ("Выбывший игрок" + " - " + root.XYZ[counter]["Name"] + ", ответ: "+str(root.XYZ[counter]["Otvet"]))
         xx, yy, xx1, yy1 = canvas.coords(qualifying_round_stands[root.XYZ[counter]['Original']])
         #print(xx, yy, xx1, yy1)
         result = canvas.create_text(xx+44, yy-22, text=str(root.XYZ[counter]['Otvet']), fill="#ffff00", width=80)
         canvas.tag_raise(result)
-        log.write(root.XYZ[counter]["Name"] + " (" +str(root.XYZ[counter]["Otvet"]) + ") "+h+ "\n")
+        log.write(root.XYZ[counter]["Name"] + " (" +str(root.XYZ[counter]["Otvet"]) + ") "+ "\n")
         tkinter.messagebox.showinfo("Начинаем!", "Команда готова, мы начинаем игру") # дописать
         canvas.delete('all')
         label_w_names = []
@@ -1851,23 +1291,12 @@ def after_otbor():
             aux["Nesgor"] = 0
             aux["Stab_Milestone"] = 0
             aux["Occupied"] = i
-            aux["isBot"] = root.XYZ[i]["isBot"]
             X = aux.copy()
             IgrokiDummy.append(X)
-            print(IgrokiDummy[i]["Name"]+' '+str(IgrokiDummy[i]["isBot"]))
         Igroki.place(relx=0.03, rely=0.03)
         last_preparations()
         if (mode_code == 2):
-            if (IgrokiDummy[0]['isBot']==0):
-                choosing_the_milestone()
-            else:
-                zuvis_lygis = 4
-                while True:
-                    poisson_value = np.random.poisson(zuvis_lygis)
-                    if 1 <= poisson_value <= 7:
-                        break
-                tk.messagebox.showinfo("Капитан", "Я ставлю несгораемой суммой "+str(money[poisson_value]))
-                milestone_set(poisson_value)
+            choosing_the_milestone()
         else:
             global stage
             global vopros_show
@@ -1885,48 +1314,21 @@ def showcorr():
     root.komanda = root.after(100, after_otbor)
 
 
-def otbor_bot():
-    fish = base_otbor[index_voprosa].Answer
-    while True:
-        fish1 = math.trunc(fish*random.uniform(0.5, 2))
-        if 1 <= fish1 <= 9999:
-            break
-    return fish1
-
 
 
 
     #root.otbor_corr_field = tk.Label(root, justify=tkinter.LEFT, bg=yellow, textvariable=qual_corr, wraplength = 330) #HERE!
    # root.otbor_corr_field.place(relx=0.1, rely=0.77, width=37, height=16) # to be rectified
 
-def botwait():
-    root.after_cancel(root.otvetbota)
-    #print("Бот "+str(active_qual+1) +" ответил "+str(P ["Otvet"]))
-    q_a()
-
-
-def on_off_otbor(o):
-    if (states[o] == 0):
-        name_entry["state"] = "normal"
-    else:
-        name_entry["state"] = "readonly"
-        root.begin = datetime.now()
-        root.otvetbota = root.after(randint(3500, 6000), botwait) # (2500, 6000)
-
-
 
 
 def otbor_next():
-    global T, whoisactive
+    global T
     root.after_cancel(root.T)
     global active_qual
     if active_qual <= 4: #должно быть 4
         active_qual +=1
-        # if (bot_names[active_qual] == 1):
-        #     whoisactive = who_is.bot
-        # else:
-        #     whoisactive = who_is.human
-        on_off_otbor(active_qual)
+        name_entry["state"] = "normal"
         light_qual(active_qual)
         root.title (ImenaIgrokov[active_qual]+", введите ответ")
     else:
@@ -1942,20 +1344,16 @@ def otbor_next():
 
 
 def q_a(*args):
-    if (states[active_qual] == 0):
-        length = user_name.get()
-    else:
-        length = otbor_bot()
-    if len(str(length))==0:
+    length = user_name.get()
+    if len(length)==0:
         pass
     elif (int(length)==0):
         pass
     else:
         root.end = datetime.now() - root.begin
         #print(str(root.end)) #debug
-        P["isBot"] = states[active_qual]
         P ["Name"] = ImenaIgrokov[active_qual]
-        P ["Otvet"] = int(length)
+        P ["Otvet"] = int(user_name.get())
         P ["Vremya"] = root.end
         P ["Distance"] = abs(P ["Otvet"] - base_otbor[index_voprosa].Answer)
         P ["Original"] = active_qual
@@ -1982,14 +1380,12 @@ def kwalif():
         #print(howmany_freebies)
         for b in range(6):
             ImenaIgrokov.append(vardas_variable[b].get())
-            print("Ботство " + str(b + 1) + ": " + str(states[b]))
         tkinter.messagebox.showinfo("Отбор", "Внимание, вопрос отборочного тура!")
         log.write ("Отборочный тур"+'\n')
             # дописать
         greed.place_forget()
         for x in range (6):
             pole_imya[x].place_forget()
-            bot_checks[x].place_forget()
         read_q0()
         # canvas = tk.Canvas(root, width=600, height=300, bg='#cfcfcf')
         # canvas.place(x=400, y=210)
@@ -2041,22 +1437,12 @@ for x in range(6):
     dummy.set("Игрок "+str(x+1))
     vardas_variable.append(dummy)
 
-
-for x in range(6):
-    isbot = tk.IntVar(value=0)
-    #ppp = isbot.get()
-    bot_names.append(isbot)
-    bot_check = tk.Checkbutton(root, text="Бот", variable = isbot, command=isbot_changed)
-    bot_checks.append(bot_check)
-
-
 for x in range(6):
     vardas = ttk.Entry(root, textvariable =vardas_variable[x])
     pole_imya.append(vardas)
 
 for x in range (6):
     pole_imya[x].place(width = 125, relx=0.05, rely = 0.05+(0.15*x))
-    bot_checks[x].place(width = 90, relx = 0.19, rely = 0.05+(0.15*x))
 
 
 
