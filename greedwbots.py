@@ -467,7 +467,7 @@ def supplement():
             else:
                 tk.messagebox.showinfo("Следующий ответ", "Его даст "+ IgrokiDummy[i]["Name"])
             active_567 = i
-            golosoval[i] = False
+            #golosoval[i] = False
             light_player(active_567)
             tk.messagebox.showinfo(' ', IgrokiDummy[active_567]["Name"] + ', отвечайте')
             if (IgrokiDummy[active_567]['isBot'] == 1):
@@ -489,7 +489,7 @@ def accept():
     if (ku == 0):
         ku = 1
     if (stage < 7):
-        if (active_567>0) and ((len(variants))<4):
+        if (active_567>0) and ((len(variants))<4) and (golosoval[0] is False):
             active_567 -=1
             light_player(active_567)
             if (ku!=0):
@@ -634,7 +634,7 @@ def terminator(auz):
             if term_isbot[i] is True:
                 df = i
             break
-        root.termbot=root.after(random.randint(3500, 6500), lambda a=df:buzz_bot(a))
+        root.termbot=root.after(random.randint(3500, 6500), lambda a=df:buzz_bot(a)) # нужно root.termbot=root.after(random.randint(3500, 6500), lambda a=df:buzz_bot(a))
     elif (bots_in_term == 2):
         quick_reaction = []
         for i in range(2):
@@ -650,13 +650,14 @@ def terminator(auz):
 def buzz_bot(oem):
     global winner, loser
     root.after_cancel(root.termbot)
+    #oem = 1 #debug
     root.buzzer2[oem]["bg"] = "#ff0000"
-    root.kto_nazhal = oem
+    root.kto_nazhal = oem #нужно root.kto_nazhal = oem
     button_pressed = pygame.mixer.Sound("sounds/greed_gong.wav")
     button_pressed.play()
     log.write('Кнопку нажимает ' + IgrokiDummy[player_term[root.kto_nazhal]]["Name"] + '\n')
     root.term_state = term.pressed
-    if randrange(100) < 88:
+    if randrange(100) < 88: #нужно 88
         ans = pytaniaterm[index_term]["A"][0]
         tk.messagebox.showinfo(IgrokiDummy[player_term[root.kto_nazhal]]["Name"], 'Мой ответ: '+ans)
         log.write("Игрок даёт ответ " + ans + '\n')
@@ -719,7 +720,7 @@ def term_choose():
                 pass
         else:
             tkinter.messagebox.showinfo(IgrokiDummy[active_term]["Name"], 'будете ли вы играть в терминатор?')
-            if (randrange(3) >= 1): #нужно
+            if (randrange(3) >= 1):
                 player_term[0] = active_term
                 while True:
                     i = random.randint(0, len(IgrokiDummy)-1)
@@ -866,6 +867,17 @@ def check_5678():
                     right()
                     endgame()
 
+
+def term_init():
+    global schetchik
+    pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
+    pygame.mixer.music.play(-1)
+    # global schetchik
+    schetchik = randint(10, 20)
+    svet_term(-1)
+    tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
+    root.termtimer = root.after(400, term_choose)
+
 def right():
     global stage, nuotraukos, eax, ko, f, kysis_kapitonui_buvo, schetchik
     current_winnings(stage+1)
@@ -893,13 +905,7 @@ def right():
         if (0 <= stage <= 3):
             read_12345678(stage)
         elif stage < 7:
-            pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
-            pygame.mixer.music.play(-1)
-            #global schetchik
-            schetchik = randint(10, 20)
-            svet_term(-1)
-            tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
-            root.termtimer = root.after(400, term_choose)
+            term_init()
         else:
             read_12345678(stage)
     elif (0<=stage <=5):
@@ -910,14 +916,7 @@ def right():
                 if ( 0 <= stage <=3):
                     read_12345678(stage)
                 elif stage <7:
-                    pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
-                    pygame.mixer.music.play(-1)
-                    #global schetchik
-                    schetchik = randint(10, 20)
-                    svet_term(-1)
-                    tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
-                    root.termtimer = root.after(400, term_choose)
-                    pass #to be rectified
+                    term_init()
                 else:
                     pass #to be rectified
             elif (mode_code == 1) and (kysis_kapitonui_buvo is False) and (randrange(2) == 1) and (IgrokiDummy[0]["Share"] == 1) and (stage in [3,4,5]): #rang=drange(2) == 1
@@ -928,13 +927,7 @@ def right():
                     kysis_kapitonui_buvo = True
                     stage += 1
                     light_player(-1)
-                    pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
-                    pygame.mixer.music.play(-1)
-                    #global schetchik
-                    schetchik = randint(10, 20)
-                    svet_term(-1)
-                    tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
-                    root.termtimer = root.after(400, term_choose)
+                    term_init()
                 else:
                     log.write('Капитан останавливает игру.' + "\n")
                     endgame()
@@ -943,22 +936,14 @@ def right():
                 endgame()
         else:
             tkinter.messagebox.showinfo("Капитан", IgrokiDummy[0]["Name"] + ', ' + "будете ли вы играть дальше?")
-            #if (random.randint(1, 100) > 0):
-            if (random.randint(1, 100) > capbot_wanna_walkaway[stage]): #нужно
+            if (random.randint(1, 100) > capbot_wanna_walkaway[stage]):
                 tkinter.messagebox.showinfo("Да", "Мы играем дальше")
                 stage +=1
                 light_player(-1)
                 if ( 0 <= stage <=3):
                     read_12345678(stage)
                 elif stage <7:
-                    pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
-                    pygame.mixer.music.play(-1)
-                    #global schetchik
-                    schetchik = randint(10, 20)
-                    svet_term(-1)
-                    tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
-                    root.termtimer = root.after(400, term_choose)
-                    pass #to be rectified
+                    term_init()
                 else:
                     pass #to be rectified
             else:
@@ -973,13 +958,7 @@ def right():
                         kysis_kapitonui_buvo = True
                         stage += 1
                         light_player(-1)
-                        pygame.mixer.music.load("sounds/greed_terminator_intro.mp3")
-                        pygame.mixer.music.play(-1)
-                        #global schetchik
-                        schetchik = randint(10, 20)
-                        svet_term(-1)
-                        tkinter.messagebox.showinfo('Терминатор', 'Играем в терминатор!')
-                        root.termtimer = root.after(400, term_choose)
+                        term_init()
                     else:
                         log.write('Капитан останавливает игру.' + "\n")
                         endgame()
@@ -1180,9 +1159,10 @@ def callback(j):
         global active_567
         global stage567
         if (stage567 == _567.priem):
-            if (aceptadas[j]) or ((mode_code!=3) and (freebied == True) and (root.pytania[index_voprosa]["J"][0] == j + 1)) or ((mode_code ==3) and (freebies_used_on_this_question > 0) and (j+1 in root.pytania[index_voprosa]["J"])) or (
-                    (stage < 7) and (golosoval[active_567])):
+            if (aceptadas[j]) or ((mode_code!=3) and (freebied == True) and (root.pytania[index_voprosa]["J"][0] == j + 1)) or ((mode_code ==3) and (freebies_used_on_this_question > 0) and (j+1 in root.pytania[index_voprosa]["J"])) or \
+                    ((stage < 7) and (golosoval[active_567]) and IgrokiDummy[active_567]['isBot']==0):
                 pass
+                #print("F")
             else:
                 aceptadas[j] = True
                 variants.add(j + 1)
@@ -1217,7 +1197,7 @@ def callback(j):
                                 if aceptadas[rejected_answer]:
                                     break
                             root.reject = root.after(2500, lambda e = rejected_answer: callback(e))
-                        else:
+                        else: #нужно else:
                             tkinter.messagebox.showinfo("Нет", "Я доволен всеми вариантами")
                             light_player(-1)
                             stage567 = _567.proverka
@@ -1299,13 +1279,13 @@ def bots_answer(_v):
                 s = randint(0, varnumb[_v]-1)
                 if (s+1 in root.pytania[index_voprosa]["C"]) and (aceptadas[s] is False):
                     break
-            callback(s)
         else:
             while True:
-                a = randint(0, varnumb[_v]-1)
-                if (root.knopki[a]["text"]!="") and (aceptadas[a] is False):
+                s = randint(0, varnumb[_v]-1)
+                if (root.knopki[s]["text"]!="") and (aceptadas[s] is False):
                     break
-            callback(a)
+        callback(s)
+        #print(str(_v + 1)+': '+ IgrokiDummy[active_567]['Name'] + ' заходит с ответом ' + root.pytania[index_voprosa]["A"][s])
         if (IgrokiDummy[0]["isBot"]==0):
             for f in range(varnumb[_v]):
                 root.knopki[f]['state'] = "normal"
@@ -1909,8 +1889,12 @@ def otbor_bot():
    # root.otbor_corr_field.place(relx=0.1, rely=0.77, width=37, height=16) # to be rectified
 
 def botwait():
-    root.after_cancel(root.otvetbota)
-    #print("Бот "+str(active_qual+1) +" ответил "+str(P ["Otvet"]))
+    try:
+        root.after_cancel(root.otvetbota)
+        #print("OK")
+    except Exception:
+        pass
+        #print("error")
     q_a()
 
 
@@ -1920,7 +1904,7 @@ def on_off_otbor(o):
     else:
         name_entry["state"] = "readonly"
         root.begin = datetime.now()
-        root.otvetbota = root.after(randint(3500, 6000), botwait) # (2500, 6000)
+        root.otvetbota = root.after(randint(3500, 6000), botwait) #root.after(randint(3500, 6000), botwait)
 
 
 
@@ -1974,7 +1958,7 @@ def q_a(*args):
         user_name.set("")
         name_entry["state"]= "disabled"
         root.Qual_Field = False
-        root.T = root.after(500, otbor_next) #1500
+        root.T = root.after(1500, otbor_next) #1500
 
 
 def kwalif():
