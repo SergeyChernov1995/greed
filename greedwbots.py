@@ -1080,7 +1080,7 @@ def num_of_corr():
     log.write('Проверка ответов: '+'\n')
     global variants_backup
     variants_backup = variants.copy()
-    root.prov = root.after (1000, check_5678)
+    root.prov = root.after (1000, check_5678) #1000
 
 def bot_rejected(i):
     root.after_cancel(root.bot_rejected_1234)
@@ -1093,7 +1093,7 @@ def bot_rejected(i):
 
 
 def callback(j):
-    global stage, freebies_used_on_this_question, rejected_answer
+    global stage, freebies_used_on_this_question, rejected_answer, stage567, active_567, variants
     if ( 0 <= stage <=3 ):
         if (root.state == h.unpicked):
             aceptadas[j]=True
@@ -1156,11 +1156,11 @@ def callback(j):
             #дописать
             #to be rectified
     else:
-        global active_567
-        global stage567
+        #global active_567
+        #global stage567
         if (stage567 == _567.priem):
             if (aceptadas[j]) or ((mode_code!=3) and (freebied == True) and (root.pytania[index_voprosa]["J"][0] == j + 1)) or ((mode_code ==3) and (freebies_used_on_this_question > 0) and (j+1 in root.pytania[index_voprosa]["J"])) or \
-                    ((stage < 7) and (golosoval[active_567]) and IgrokiDummy[active_567]['isBot']==0):
+                    ((stage < 7) and (golosoval[active_567]) and IgrokiDummy[active_567]['isBot']==0) or ((stage == 7) and (len(variants) >= 4)):
                 pass
                 #print("F")
             else:
@@ -1930,7 +1930,7 @@ def otbor_next():
         name_entry.place_forget()
         root.title ("Какой же ответ правильный?")
         global otbor_waitforcorr
-        otbor_waitforcorr = root.after (500, showcorr) #1500
+        otbor_waitforcorr = root.after (1500, showcorr) #1500
 
 
 
