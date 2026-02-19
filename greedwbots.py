@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Greed
-# Copyright © 2020-2025 Sergey Chernov aka Gamer
+# Copyright © 2020-2026 Sergey Chernov aka Gamer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,12 +31,23 @@ from random import randint
 from random import randrange
 from random import choice
 from operator import itemgetter, attrgetter, methodcaller
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw, ImageFont
 from enum import Enum
 from tkinter import simpledialog
 import pygame
 import numpy as np
+import subprocess
+import sys
 #from test_canvas import holst
+badges_font_path = "fonts/LiberationSerif-Regular.ttf"
+badges_font_size = 16
+badges_font = ImageFont.truetype(badges_font_path, badges_font_size)
+
+winnings_font_path = "fonts/DINCondensedC.otf"
+winnings_font_size = 36
+winnings_font = ImageFont.truetype(winnings_font_path, winnings_font_size)
+videli = False
+rl_places = [[(0.5, 0.5), (0.25, 0.75), (0.25, 0.2), (0.75, 0.75), (0.75, 0.2)], [(0.75, 0.25), (0.25, 0.75), (0.25, 0.25), (0.75, 0.75)], [(0.75, 0.5), (0.25, 0.75), (0.25, 0.25)], [(0.75, 0.5), (0.25, 0.5)], [(0.5, 0.5)]]
 
 class h(Enum):
     unpicked = 1
@@ -99,6 +110,7 @@ qterm = codecs.open('qbaset.txt', 'r', "utf_8_sig")  # stage+1
 isxod = 0
 term_isbot = [False, False]
 capbot_wanna_walkaway = [1, 5, 10, 20, 50, 70]
+everyone_took_the_money_7 = False
 for line in qterm:
     x = {}
 
@@ -186,6 +198,17 @@ bot_checks = []
 states = [0]*6 #[0]*6
 rejected_answer = -1
 winner, loser = None, None
+
+def open_image(path):
+    if sys.platform.startswith('linux'):
+        subprocess.Popen(['xdg-open', path])
+    elif sys.platform == 'darwin':
+        subprocess.Popen(['open', path])
+    elif sys.platform == 'win32':
+        import os
+        os.startfile(path)
+
+
 def isbot_changed():
     global states
     global bot_names
@@ -544,7 +567,10 @@ def current_winnings(f):
         for s in range (len(IgrokiDummy)):
             IgrokiDummy[s]["Sgor"]= money[f]*IgrokiDummy[s]["Share"]//sharez
             #print(str(s)+': '+str(IgrokiDummy[s]["Sgor"]+IgrokiDummy[s]["Nesgor"]))
-            eax[s]["text"] = str(IgrokiDummy[s]["Sgor"]+IgrokiDummy[s]["Nesgor"])
+            if (mode_code == 2) and (IgrokiDummy[s]["Share"] == 0):
+                eax[s]["text"] = str(IgrokiDummy[s]["Sgor"] + IgrokiDummy[s]["Nesgor"]+IgrokiDummy[s]["Stab_Milestone"])
+            else:
+                eax[s]["text"] = str(IgrokiDummy[s]["Sgor"]+IgrokiDummy[s]["Nesgor"])
     #for z in range(len(IgrokiDummy)):
         #print(str(IgrokiDummy[z]["Name"]) + ': ' + str(IgrokiDummy[z]["Sgor"] + IgrokiDummy[z]["Nesgor"]) + '(' + str(
             #IgrokiDummy[z]["Share"]) + ')')
@@ -879,7 +905,7 @@ def term_init():
     root.termtimer = root.after(400, term_choose)
 
 def right():
-    global stage, nuotraukos, eax, ko, f, kysis_kapitonui_buvo, schetchik
+    global stage, nuotraukos, eax, ko, f, kysis_kapitonui_buvo, schetchik, everyone_took_the_money_7
     current_winnings(stage+1)
     if (stage<=3):
         root.knopki[root.picked]["bg"] = "#ff9f00"
@@ -992,6 +1018,8 @@ def right():
         if (len(IgrokiDummy) == len(notgoing)):
             tkinter.messagebox.showinfo("Игра окончена", "Все игроки забрали деньги")
             log.write("Игра окончена"+'\n')
+            everyone_took_the_money_7 = True
+            endgame()
         else:
             for s in range(len(nuotraukos)):
                 nuotraukos[s].place_forget()
@@ -1067,9 +1095,12 @@ def endgame():
     if (isxod == 0):
         for k in range (len(IgrokiDummy)):
             log.write(IgrokiDummy[k]["Name"]+ ": "+ str (IgrokiDummy[k]["Stab_Milestone"]+IgrokiDummy[k]["Nesgor"])+'\n')
+            IgrokiDummy[k]["Total"] = IgrokiDummy[k]["Stab_Milestone"]+IgrokiDummy[k]["Nesgor"]
     else:
         for k in range (len(IgrokiDummy)):
             log.write(IgrokiDummy[k]["Name"]+ ": "+ str (IgrokiDummy[k]["Sgor"]+IgrokiDummy[k]["Nesgor"])+'\n')
+            IgrokiDummy[k]["Total"] = IgrokiDummy[k]["Sgor"] + IgrokiDummy[k]["Nesgor"]
+    mainmenu.entryconfig("Посмотреть итог игры", state = tk.NORMAL) #index 1 - это опция просмотра финального результата
 
 
 def num_of_corr():
@@ -1722,6 +1753,72 @@ def read_q0():
     #     print(base_otbor[a].Answer)
     # print(base_otbor[index_voprosa].Answer)
 
+def showimage():
+    global videli
+    #tk.messagebox.showinfo("Потом доделаю", "Under construction")
+    if videli is False:
+        videli = True
+        im = Image.open("scores/" + str(len(IgrokiDummy)) + '.png')
+        im_sz = im.size
+        im_pl = []
+        badges = []
+        badge_position = (220, 295)
+        badge_width, badge_height = 100, 40
+        for a in range(len(IgrokiDummy)):
+            if (a == 0):
+                t = Image.open("leader.png")
+            else:
+                t = Image.open("player.png")
+            badge = Image.new("RGB", (badge_width, badge_height), "#cf8f00")
+            draw = ImageDraw.Draw(badge)
+            draw.text((badge_width // 2, badge_height // 2), IgrokiDummy[a]["Name"].upper(), font=badges_font,
+                      fill="#000000", anchor="mm")
+            badges.append(badge)
+            im_pl.append(t)
+
+        for i in range(len(im_pl)):
+            im_pl[i].paste(badges[i], badge_position, None)
+            im_pl[i].save("temp/player" + str(i) + '.png')
+
+        for i in range(len(im_pl)):
+            im_pl[i] = im_pl[i].resize((300, 300), Image.LANCZOS)
+            if im_pl[i].mode in ('RGBA', 'P'):
+                im = im.convert('RGBA')
+                # Use the alpha channel as the mask
+                mask = im_pl[i]
+            else:
+                mask = None
+        win = []
+
+        prize_width, prize_height = 125, 50
+
+        for i in range(len(im_pl)):
+            # im_pl[i].paste(badges[i], badge_position, None)
+            # im_pl[i].save("temp/player"+str(i)+'.png')
+            prize = Image.new("RGB", (prize_width, prize_height), "#00007f")
+            prize_draw = ImageDraw.Draw(prize)
+            plp = IgrokiDummy[i]["Total"]
+            plp = f"{plp:,}".replace(",", ".")
+            prize_draw.text((prize_width // 2, prize_height // 2), text=plp, font=winnings_font, fill="#ffffff",
+                            anchor="mm")
+            win.append(prize)
+
+        for i in range(len(im_pl)):
+            wy = list(rl_places[5 - len(im_pl)][i])
+            my = list(im_sz)
+            ty = (int(wy[0] * my[0]) - 150, int(wy[1] * my[1]) - 150)
+            wy = tuple(ty)
+            #print(wy)
+            im.paste(im_pl[i], wy, mask)
+            if (IgrokiDummy[i]['Total'] > 0):
+                wy = list(ty)
+                wy = [wy[0] + 85, wy[1] + 255]
+                wy = tuple(wy)
+                im.paste(win[i], wy, None)
+                # im.save("temp/finish.png")
+        im.save("temp/final.png")
+    open_image("temp/final.png")
+    
 
 
 def doSomething():
@@ -2025,6 +2122,7 @@ mainmenu = tk.Menu(root)
 root.config (menu = mainmenu)
 # mainmenu.add_command(label = 'Новая игра', command = newgame)
 mainmenu.add_command(label = 'Выход', command = doSomething)
+mainmenu.add_command(label = "Посмотреть итог игры", command = showimage, state=tk.DISABLED)
 greed = tk.Button(root, text="Начать игру", command=kwalif, width = 7, height = 5)
 greed.place(relx=0.3, rely=0.3)
 vardas_variable=[] #текст имен игроков
